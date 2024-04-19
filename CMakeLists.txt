@@ -8,12 +8,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add debugging information
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
-include_directories(include)
-
 file(GLOB SOURCES "src/*.cpp")
 
 # Create the static library
 add_library(stdext STATIC ${SOURCES})
+
+target_include_directories(stdext PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Link additional libraries
 target_link_libraries(stdext PUBLIC -lstdc++_libbacktrace)
