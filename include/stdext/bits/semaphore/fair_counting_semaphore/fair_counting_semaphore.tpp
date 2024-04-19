@@ -50,7 +50,7 @@ constexpr std::size_t fair_counting_semaphore<LeastMaxValue>::max() noexcept {
 }
 
 template <std::size_t LeastMaxValue>
-fair_counting_semaphore<LeastMaxValue>::fair_counting_semaphore(std::size_t desired)
+fair_counting_semaphore<LeastMaxValue>::fair_counting_semaphore(std::size_t desired) noexcept
     : m_value(std::min(LeastMaxValue, desired))
     , m_waiting(0)
     , m_notified(0)
