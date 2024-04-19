@@ -8,7 +8,7 @@ namespace stdext {
 template<class E> class allocator;
 
 template<class E, class U>
-constexpr bool operator==(const allocator<T>&, const allocator<U>&) noexcept;
+constexpr bool operator==(const allocator<E>&, const allocator<U>&) noexcept;
 
 template <std::destructible E>
 constexpr void destroy_at(E *element);
@@ -25,6 +25,7 @@ public:
     using size_type                              = std::size_t;
     using difference_type                        = std::ptrdiff_t;
     using propagate_on_container_move_assignment = std::true_type;
+    using is_always_equal                        = std::true_type;
 
     constexpr allocator() noexcept = default;
     constexpr allocator(const allocator &) noexcept = default;
@@ -53,7 +54,5 @@ public:
     struct rebind {
         using other = allocator<U>;
     };
-
-    using is_always_equal = true_type;
 };
 }
