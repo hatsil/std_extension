@@ -14,6 +14,6 @@ file(GLOB SOURCES "src/*.cpp")
 add_library(stdext STATIC ${SOURCES})
 
 target_include_directories(stdext PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
+target_compile_features(stdext PUBLIC cxx_std_23)
 # Link additional libraries
 target_link_libraries(stdext PUBLIC -lstdc++_libbacktrace)
