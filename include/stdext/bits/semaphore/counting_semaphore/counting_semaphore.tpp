@@ -18,7 +18,7 @@ counting_semaphore<LeastMaxValue>::counting_semaphore(std::size_t desired) noexc
 
 
 template<std::size_t LeastMaxValue>
-void counting_semaphore<LeastMaxValue>::release(std::size_t update) noexcept {
+void counting_semaphore<LeastMaxValue>::release(std::size_t update) {
     if (0 == update) {
         return;
     }
@@ -27,6 +27,9 @@ void counting_semaphore<LeastMaxValue>::release(std::size_t update) noexcept {
     {
         std::lock_guard guard(m_mutex);
         minUpdate = std::min(m_waiting, update);
+        if (max() - minUpdate < m_notified) {
+            //throw something...
+        }
         m_waiting -= minUpdate;
         m_notified += minUpdate;
         m_value += std::min(LeastMaxValue - m_value, update - minUpdate);
@@ -55,7 +58,7 @@ void counting_semaphore<LeastMaxValue>::acquire() {
         remainingNotifications = --m_notified;
     }
 
-    if (0 < remainingNotifications) {
+    if (0 != remainingNotifications) {
         m_cv.notify_one();
     }
 }
@@ -67,11 +70,6 @@ bool counting_semaphore<LeastMaxValue>::try_acquire() noexcept {
         --m_value;
         return true;
     }
-    if (0 != m_notified) {
-        ++m_waiting;
-        --m_notified;
-        return true;
-    }
     return false;
 }
 
@@ -79,12 +77,12 @@ template<std::size_t LeastMaxValue>
 template<class Rep, class Period>
 bool counting_semaphore<LeastMaxValue>::try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time) {
     std::size_t remainingNotifications = 0;
-    bool res = false;
+    bool res = true;
     {
         std::unique_lock lock(m_mutex);
         if (0 != m_value) {
             --m_value;
-            return true;
+            return res;
         }
 
         if (max() == m_waiting) {
@@ -111,12 +109,12 @@ template<std::size_t LeastMaxValue>
 template<class Clock, class Duration>
 bool counting_semaphore<LeastMaxValue>::try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time) {
     std::size_t remainingNotifications = 0;
-    bool res = false;
+    bool res = true;
     {
         std::unique_lock lock(m_mutex);
         if (0 != m_value) {
             --m_value;
-            return true;
+            return res;
         }
 
         if (max() == m_waiting) {

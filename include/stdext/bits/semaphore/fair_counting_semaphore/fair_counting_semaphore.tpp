@@ -58,7 +58,7 @@ fair_counting_semaphore<LeastMaxValue>::fair_counting_semaphore(std::size_t desi
     , m_tail(nullptr) {}
 
 template <std::size_t LeastMaxValue>
-void fair_counting_semaphore<LeastMaxValue>::release(std::size_t update) noexcept {
+void fair_counting_semaphore<LeastMaxValue>::release(std::size_t update) {
     if (0 == update) {
         return;
     }

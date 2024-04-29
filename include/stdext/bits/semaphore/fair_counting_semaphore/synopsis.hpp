@@ -21,7 +21,7 @@ public:
 
     ~fair_counting_semaphore() = default;
 
-    void release(std::size_t update = 1) noexcept;
+    void release(std::size_t update = 1);
     void acquire();
     bool try_acquire() noexcept;
 

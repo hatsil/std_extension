@@ -20,7 +20,7 @@ public:
     counting_semaphore(const counting_semaphore &) = delete;
     counting_semaphore& operator=(const counting_semaphore &) = delete;
 
-    void release(std::size_t update = 1) noexcept;
+    void release(std::size_t update = 1);
     void acquire();
     bool try_acquire() noexcept;
 
