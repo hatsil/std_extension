@@ -4,7 +4,7 @@
 #include <memory>
 #include <cstdint>
 
-namespace stdext {
+namespace ext {
 template <class T, class Allocator = std::allocator<T>>
 class concurrent_list final {
 public:

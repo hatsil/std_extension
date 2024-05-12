@@ -1,5 +1,5 @@
-#include "stdext/exception.hpp"
-#include "stdext/executor.hpp"
+#include "std_extention/exception.hpp"
+#include "std_extention/executor.hpp"
 
 #include <iostream>
 #include <mutex>
@@ -11,7 +11,7 @@
 using namespace std::chrono_literals;
 
 void foo(const std::string &str) {
-    throw stdext::exception(str);
+    throw ext::exception(str);
 }
 
 void bar(int i) {
@@ -30,7 +30,7 @@ int baz(int i) {
 
 void bug1(int i) {
     if (i > 10) {
-        throw stdext::exception("i > 10");
+        throw ext::exception("i > 10");
     }
     bar(i);
 }
@@ -53,12 +53,12 @@ int main() {
     std::cout << "Hello, CMake!" << std::endl;
     try {
         foo("foo throws");
-    } catch (const stdext::exception &e) {
+    } catch (const ext::exception &e) {
         std::cout << e << std::endl;
     }
 
     {
-        stdext::executor executor(10);
+        ext::executor executor(10);
         for (int i = 0; i < 20; i++) {
             executor.emplace_back(bar, i+1);
         }
@@ -68,14 +68,14 @@ int main() {
     std::cout << std::endl;
 
     try {
-        stdext::executor executor(0);
-    } catch (const stdext::executor_exception &e) {
+        ext::executor executor(0);
+    } catch (const ext::executor_exception &e) {
         std::cout << e << std::endl;
     }
 
     {
         std::vector<std::future<void>> futures;
-        stdext::executor executor(10);
+        ext::executor executor(10);
         for (int i = 20; i < 40; i++) {
             futures.push_back(executor.emplace_back(bar, i+1));
         }
@@ -87,7 +87,7 @@ int main() {
 
     {
         std::vector<std::future<int>> futures;
-        stdext::executor executor(10);
+        ext::executor executor(10);
         for (int i = 20; i < 40; i++) {
             futures.push_back(executor.emplace_back(baz, i+1));
         }
@@ -100,7 +100,7 @@ int main() {
 
     for (auto bug : {bug1, bug2, bug3}) {
         std::vector<std::future<void>> futures;
-        stdext::executor executor(10);
+        ext::executor executor(10);
 
         for (int i = 0; i < 20; i++) {
             futures.push_back(executor.emplace_back(bug, i+1));
@@ -108,8 +108,8 @@ int main() {
 
         for (auto &&future : futures) try {
             future.get();
-        } catch(const stdext::exception &e) {
-            std::cout << "stdext::exception:\n" << e << std::endl;
+        } catch(const ext::exception &e) {
+            std::cout << "ext::exception:\n" << e << std::endl;
         } catch(const std::exception &e) {
             std::cout << "std::exception:\n" << e.what() << std::endl;
         } catch(const int &e) {

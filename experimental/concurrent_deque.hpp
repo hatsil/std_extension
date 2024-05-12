@@ -4,8 +4,8 @@
 #include <atomic>
 #include <cstdint>
 
-namespace stdext {
-template <class E, class Allocator = stdext::allocator<E>>
+namespace ext {
+template <class E, class Allocator = ext::allocator<E>>
 class concurrent_deque final {
   public:
     // types

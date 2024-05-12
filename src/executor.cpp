@@ -1,7 +1,7 @@
-#include "stdext/exception.hpp"
-#include "stdext/executor.hpp"
+#include "std_extention/executor.hpp"
+#include "std_extention/exception.hpp"
 
-namespace stdext {
+namespace ext {
 executor::executor(std::size_t nthreads)
     : m_activeness(0) {
     if (0 == nthreads) {
@@ -10,9 +10,9 @@ executor::executor(std::size_t nthreads)
 
     for (std::size_t i = 0; i < nthreads; i++) {
         m_workers.emplace_back([this] {
-            for(;;) {
+            for (;;) {
                 if (auto task = m_tasks.pop_front(); State::STOP == (*task)()) {
-                    m_tasks.emplace_front([]{ return State::STOP; });
+                    m_tasks.emplace_front([] { return State::STOP; });
                     return;
                 }
             }
@@ -24,7 +24,8 @@ executor::~executor() {
     std::ptrdiff_t expected = -2;
     while (!m_activeness.compare_exchange_weak(expected, -2)) {
         if (0 <= expected) {
-            std::cerr << "Error: " << "stdext::executor(" << m_workers.size() << ") has been destructed while it's still active.\n";
+            std::cerr << "Error: " << "ext::executor(" << m_workers.size()
+                      << ") has been destructed while it's still active.\n";
             std::cerr << "Call std::terminate();" << std::endl;
             std::terminate();
         }
@@ -33,13 +34,9 @@ executor::~executor() {
     }
 }
 
-void executor::shutdown() {
-    shutdown(ShutdownPolicy::GRACEFUL);
-}
+void executor::shutdown() { shutdown(ShutdownPolicy::GRACEFUL); }
 
-void executor::forced_shutdown() {
-    shutdown(ShutdownPolicy::FORCED);
-}
+void executor::forced_shutdown() { shutdown(ShutdownPolicy::FORCED); }
 
 void executor::shutdown(const ShutdownPolicy policy) {
     std::ptrdiff_t expected = 0;
@@ -52,13 +49,13 @@ void executor::shutdown(const ShutdownPolicy policy) {
     }
 
     if (ShutdownPolicy::GRACEFUL == policy) {
-        m_tasks.emplace_back([]{ return State::STOP; });
+        m_tasks.emplace_back([] { return State::STOP; });
     } else {
-        m_tasks.emplace_front([]{ return State::STOP; });
+        m_tasks.emplace_front([] { return State::STOP; });
     }
     for (auto &&worker : m_workers) {
         worker.join();
     }
     m_activeness = -2;
 }
-}
+} // namespace ext
