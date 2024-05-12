@@ -25,11 +25,11 @@ public:
     void acquire();
     bool try_acquire() noexcept;
 
-    template <class Rep, class Period>
-    bool try_acquire_for(const std::chrono::duration<Rep, Period> &rel_time);
-
     template <class Clock, class Duration>
     bool try_acquire_until(const std::chrono::time_point<Clock, Duration> &abs_time);
+
+    template <class Rep, class Period>
+    bool try_acquire_for(const std::chrono::duration<Rep, Period> &rel_time);
 
 private:
     class UnsafeBinarySemaphore {
