@@ -1,6 +1,8 @@
 #include "std_extention/executor.hpp"
 #include "std_extention/exception.hpp"
 
+#include <iostream>
+
 namespace ext {
 executor::executor(std::size_t nthreads)
     : m_activeness(0) {
@@ -21,16 +23,14 @@ executor::executor(std::size_t nthreads)
 }
 
 executor::~executor() {
-    std::ptrdiff_t expected = -2;
-    while (!m_activeness.compare_exchange_weak(expected, -2)) {
-        if (0 <= expected) {
-            std::cerr << "Error: " << "ext::executor(" << m_workers.size()
-                      << ") has been destructed while it's still active.\n";
-            std::cerr << "Call std::terminate();" << std::endl;
-            std::terminate();
-        }
+    if (0 <= m_activeness) {
+        std::cerr << "Error: " << "ext::executor(" << m_workers.size()
+                  << ") has been destructed while it's still active.\n"
+                  << "Call std::terminate();" << std::endl;
+        std::terminate();
+    }
+    while (-2 != m_activeness) {
         std::this_thread::yield();
-        expected = -2;
     }
 }
 
@@ -39,12 +39,10 @@ void executor::shutdown() { shutdown(ShutdownPolicy::GRACEFUL); }
 void executor::forced_shutdown() { shutdown(ShutdownPolicy::FORCED); }
 
 void executor::shutdown(const ShutdownPolicy policy) {
-    std::ptrdiff_t expected = 0;
-    while (!m_activeness.compare_exchange_weak(expected, -1)) {
+    for (long expected = 0; !m_activeness.compare_exchange_weak(expected, -1); expected = 0) {
         if (-2 == expected) {
             return;
         }
-        expected = 0;
         std::this_thread::yield();
     }
 
@@ -53,7 +51,7 @@ void executor::shutdown(const ShutdownPolicy policy) {
     } else {
         m_tasks.emplace_front([] { return State::STOP; });
     }
-    for (auto &&worker : m_workers) {
+    for (std::thread &worker : m_workers) {
         worker.join();
     }
     m_activeness = -2;

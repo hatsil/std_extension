@@ -3,20 +3,16 @@
 #include "std_extention/blocking_deque.hpp"
 
 #include <atomic>
-#include <cstdint>
 #include <functional>
 #include <future>
-#include <iostream>
-#include <ostream>
-#include <string>
 #include <thread>
 #include <type_traits>
 #include <vector>
 
 namespace ext {
-class executor {
+class executor final {
 public:
-    explicit executor(std::size_t nthreads);
+    executor(std::size_t nthreads = 1);
 
     executor(const executor &)            = delete;
     executor &operator=(const executor &) = delete;
@@ -54,7 +50,7 @@ private:
         CONTINUE,
         STOP,
     };
-    std::atomic<std::ptrdiff_t>                      m_activeness;
+    std::atomic_long                                 m_activeness;
     std::vector<std::thread>                         m_workers;
     blocking_deque<std::move_only_function<State()>> m_tasks;
 };

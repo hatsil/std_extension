@@ -19,7 +19,7 @@ executor::emplace_front(F &&f, Args &&...args) {
 template <class F, class... Args>
 [[nodiscard]] std::future<std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
 executor::emplace(EmplaceAt position, F &&f, Args &&...args) {
-    std::ptrdiff_t expected = 0;
+    long expected = 0;
     while (!m_activeness.compare_exchange_weak(expected, expected + 1)) {
         if (0 > expected) {
             throw exception("executor is inactive");
