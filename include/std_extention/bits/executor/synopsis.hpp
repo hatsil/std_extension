@@ -3,6 +3,7 @@
 #include "std_extention/blocking_deque.hpp"
 
 #include <atomic>
+#include <concepts>
 #include <functional>
 #include <future>
 #include <thread>
@@ -20,15 +21,17 @@ public:
     ~executor();
 
     template <class F, class... Args>
-    [[nodiscard]] std::future<std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
-    emplace_back(F &&f, Args &&...args);
+        requires std::invocable<F, Args...>
+    [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> emplace_back(F &&f, Args &&...args);
 
     template <class F, class... Args>
-    [[nodiscard]] std::future<std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
-    emplace_front(F &&f, Args &&...args);
+        requires std::invocable<F, Args...>
+    [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> emplace_front(F &&f,
+                                                                              Args &&...args);
 
-    void shutdown();
-    void forced_shutdown();
+    void                      shutdown();
+    void                      forced_shutdown();
+    [[nodiscard]] std::size_t nthreads() const noexcept;
 
 private:
     enum class EmplaceAt {
@@ -36,15 +39,17 @@ private:
         FRONT,
     };
 
-    template <class F, class... Args>
-    [[nodiscard]] std::future<std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
-    emplace(EmplaceAt position, F &&f, Args &&...args);
-
     enum class ShutdownPolicy {
         FORCED,
         GRACEFUL,
     };
-    void shutdown(const ShutdownPolicy policy);
+
+    template <class F, class... Args>
+        requires std::invocable<F, Args...>
+    [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> emplace(EmplaceAt position, F &&f,
+                                                                        Args &&...args);
+
+    void shutdown(ShutdownPolicy policy);
 
     enum class State {
         CONTINUE,

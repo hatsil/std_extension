@@ -38,7 +38,9 @@ void executor::shutdown() { shutdown(ShutdownPolicy::GRACEFUL); }
 
 void executor::forced_shutdown() { shutdown(ShutdownPolicy::FORCED); }
 
-void executor::shutdown(const ShutdownPolicy policy) {
+[[nodiscard]] std::size_t executor::nthreads() const noexcept { return m_workers.size(); }
+
+void executor::shutdown(ShutdownPolicy policy) {
     for (long expected = 0; !m_activeness.compare_exchange_weak(expected, -1); expected = 0) {
         if (-2 == expected) {
             return;

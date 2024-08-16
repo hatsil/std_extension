@@ -3,6 +3,7 @@
 #include "std_extention/memory.hpp"
 #include "std_extention/semaphore.hpp"
 
+#include <concepts>
 #include <limits>
 #include <list>
 #include <memory>
@@ -89,27 +90,41 @@ public:
     [[nodiscard]] std::shared_ptr<E>
     try_push_front_for(const std::chrono::duration<Rep, Period> &rel_time, E &&element);
 
-    template <class... Args> std::shared_ptr<E>               emplace_back(Args &&...args);
-    template <class... Args> [[nodiscard]] std::shared_ptr<E> try_emplace_back(Args &&...args);
+    template <class... Args>
+        requires std::constructible_from<E, Args...>
+    std::shared_ptr<E> emplace_back(Args &&...args);
+
+    template <class... Args>
+        requires std::constructible_from<E, Args...>
+    [[nodiscard]] std::shared_ptr<E> try_emplace_back(Args &&...args);
 
     template <class Clock, class Duration, class... Args>
+        requires std::constructible_from<E, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_back_until(const std::chrono::time_point<Clock, Duration> &abs_time,
                            Args &&...args);
 
     template <class Rep, class Period, class... Args>
+        requires std::constructible_from<E, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_back_for(const std::chrono::duration<Rep, Period> &rel_time, Args &&...args);
 
-    template <class... Args> std::shared_ptr<E>               emplace_front(Args &&...args);
-    template <class... Args> [[nodiscard]] std::shared_ptr<E> try_emplace_front(Args &&...args);
+    template <class... Args>
+        requires std::constructible_from<E, Args...>
+    std::shared_ptr<E> emplace_front(Args &&...args);
+
+    template <class... Args>
+        requires std::constructible_from<E, Args...>
+    [[nodiscard]] std::shared_ptr<E> try_emplace_front(Args &&...args);
 
     template <class Clock, class Duration, class... Args>
+        requires std::constructible_from<E, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_front_until(const std::chrono::time_point<Clock, Duration> &abs_time,
                             Args &&...args);
 
     template <class Rep, class Period, class... Args>
+        requires std::constructible_from<E, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_front_for(const std::chrono::duration<Rep, Period> &rel_time, Args &&...args);
 
@@ -172,7 +187,9 @@ private:
 
     static void release(CountingSemaphore &sem) noexcept;
 
-    template <class... Args> [[nodiscard]] std::shared_ptr<E> newElement(Args &&...args) const;
+    template <class... Args>
+        requires std::constructible_from<E, Args...>
+    [[nodiscard]] std::shared_ptr<E> newElement(Args &&...args) const;
 
     void               push(Position pos, std::shared_ptr<E> element);
     [[nodiscard]] bool try_push(Position pos, std::shared_ptr<E> element);
