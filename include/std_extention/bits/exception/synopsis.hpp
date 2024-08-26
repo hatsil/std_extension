@@ -5,9 +5,14 @@
 #include <exception>
 #include <memory>
 #include <ostream>
-#include <stacktrace>
 #include <string>
 #include <string_view>
+
+#ifdef USE_BOOST_STACKTRACE
+#include <boost/stacktrace/stacktrace.hpp>
+#else
+#include <stacktrace>
+#endif
 
 namespace ext {
 class exception : public std::exception {
@@ -39,13 +44,24 @@ private:
         const char   *what() const noexcept override;
         std::ostream &print_stacktrace(std::ostream &out) const noexcept override;
 
-        using AllocatotrStacktraceEntry =
+#ifdef USE_BOOST_STACKTRACE
+        // #error "what"
+        using AllocatorStacktraceEntry =
+            typename std::allocator_traits<Allocator>::rebind_alloc<boost::stacktrace::frame>;
+        using StacktraceType = boost::stacktrace::basic_stacktrace<AllocatorStacktraceEntry>;
+        struct Stacktrace {
+            static StacktraceType current(const AllocatorStacktraceEntry &alloc);
+        };
+#else
+        using AllocatorStacktraceEntry =
             typename std::allocator_traits<Allocator>::rebind_alloc<std::stacktrace_entry>;
-        using StackTrace = std::basic_stacktrace<AllocatotrStacktraceEntry>;
-        using String     = std::basic_string<char, std::char_traits<char>, Allocator>;
+        using Stacktrace     = std::basic_stacktrace<AllocatorStacktraceEntry>;
+        using StacktraceType = std::basic_stacktrace<AllocatorStacktraceEntry>;
+#endif
+        using String = std::basic_string<char, std::char_traits<char>, Allocator>;
 
-        String     m_what;
-        StackTrace m_stacktrace;
+        String         m_what;
+        StacktraceType m_stacktrace;
     };
 
     std::shared_ptr<SporeBase> m_spore;
