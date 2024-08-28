@@ -64,13 +64,19 @@ std::thread::native_handle_type thread::native_handle() {
 
 void thread::interrupt() {
     std::shared_ptr<Spore> spore = m_spore;
-    spore->m_interrupted         = true;
-    std::shared_lock lock(spore->m_mutex);
+    std::lock_guard        guard(spore->m_mutex);
+
     if (!spore->m_thread.joinable()) {
         throw std::system_error(std::make_error_code(std::errc::invalid_argument));
     }
     if (nullptr != spore->m_cv) {
+        {
+            std::lock_guard guard2(*(spore->m_cv_mutex));
+            spore->m_interrupted = true;
+        }
         spore->m_cv->notify_all();
+    } else {
+        spore->m_interrupted = true;
     }
 }
 } // namespace ext

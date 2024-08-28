@@ -2,7 +2,6 @@
 
 #include "synopsis.hpp"
 
-#include <mutex>
 #include <utility>
 
 namespace ext {
@@ -10,6 +9,7 @@ template <class F, class... Args>
 thread::Spore::Spore(F &&f, Args &&...args)
     : m_interrupted(false)
     , m_cv(nullptr)
+    , m_cv_mutex(nullptr)
     , m_thread(std::forward<F>(f), std::forward<Args>(args)...) {}
 
 template <class F, class... Args>

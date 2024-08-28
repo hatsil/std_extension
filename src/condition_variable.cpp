@@ -8,23 +8,29 @@ void condition_variable::notify_all() noexcept { m_cv.notify_all(); }
 void condition_variable::wait(std::unique_lock<std::mutex> &lock) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        deferred_task defer([&spore] {
+        deferred_task defer([&spore, &lock] {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = nullptr;
+            lock.lock();
+            spore->m_cv       = nullptr;
+            spore->m_cv_mutex = nullptr;
         });
 
         {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = this;
+            lock.lock();
+            spore->m_cv       = this;
+            spore->m_cv_mutex = lock.mutex();
         }
 
-        if (spore->m_interrupted.exchange(false)) {
+        if (spore->m_interrupted) {
+            spore->m_interrupted = false;
             throw interrupted_exception();
         }
-
         m_cv.wait(lock);
-
-        if (spore->m_interrupted.exchange(false)) {
+        if (spore->m_interrupted) {
+            spore->m_interrupted = false;
             throw interrupted_exception();
         }
     } else {

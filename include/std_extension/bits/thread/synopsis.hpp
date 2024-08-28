@@ -2,8 +2,8 @@
 
 #include "std_extension/exception.hpp"
 
-#include <atomic>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <thread>
 #include <unordered_map>
@@ -43,10 +43,11 @@ private:
 
         template <class F, class... Args> Spore(F &&f, Args &&...args);
 
-        std::atomic_bool    m_interrupted;
+        bool                m_interrupted;
         condition_variable *m_cv;
+        std::mutex         *m_cv_mutex;
         std::thread         m_thread;
-        std::shared_mutex   m_mutex;
+        std::mutex          m_mutex;
     };
 
     static std::unordered_map<std::thread::id, std::shared_ptr<Spore>> &get_threads() noexcept;

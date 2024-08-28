@@ -11,18 +11,25 @@ namespace ext {
 template <class Pred> void condition_variable::wait(std::unique_lock<std::mutex> &lock, Pred pred) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        deferred_task defer([&spore] {
+        deferred_task defer([&spore, &lock] {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = nullptr;
+            lock.lock();
+            spore->m_cv       = nullptr;
+            spore->m_cv_mutex = nullptr;
         });
 
         {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = this;
+            lock.lock();
+            spore->m_cv       = this;
+            spore->m_cv_mutex = lock.mutex();
         }
 
         while (!pred()) {
-            if (spore->m_interrupted.exchange(false)) {
+            if (spore->m_interrupted) {
+                spore->m_interrupted = false;
                 throw interrupted_exception();
             }
             m_cv.wait(lock);
@@ -38,22 +45,30 @@ condition_variable::wait_until(std::unique_lock<std::mutex>                   &l
                                const std::chrono::time_point<Clock, Duration> &abs_time) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        deferred_task defer([&spore] {
+        deferred_task defer([&spore, &lock] {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = nullptr;
+            lock.lock();
+            spore->m_cv       = nullptr;
+            spore->m_cv_mutex = nullptr;
         });
 
         {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = this;
+            lock.lock();
+            spore->m_cv       = this;
+            spore->m_cv_mutex = lock.mutex();
         }
 
-        if (spore->m_interrupted.exchange(false)) {
+        if (spore->m_interrupted) {
+            spore->m_interrupted = false;
             throw interrupted_exception();
         }
 
         auto res = m_cv.wait_until(lock, abs_time);
-        if (spore->m_interrupted.exchange(false)) {
+        if (spore->m_interrupted) {
+            spore->m_interrupted = false;
             throw interrupted_exception();
         }
         return res;
@@ -68,20 +83,26 @@ bool condition_variable::wait_until(std::unique_lock<std::mutex>                
                                     Pred                                            pred) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        deferred_task defer([&spore] {
+        deferred_task defer([&spore, &lock] {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = nullptr;
+            lock.lock();
+            spore->m_cv       = nullptr;
+            spore->m_cv_mutex = nullptr;
         });
 
         {
+            lock.unlock();
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv = this;
+            lock.lock();
+            spore->m_cv       = this;
+            spore->m_cv_mutex = lock.mutex();
         }
 
         std::cv_status status = std::cv_status::no_timeout;
-
         while (!pred() && std::cv_status::no_timeout == status) {
-            if (spore->m_interrupted.exchange(false)) {
+            if (spore->m_interrupted) {
+                spore->m_interrupted = false;
                 throw interrupted_exception();
             }
             status = m_cv.wait_until(lock, abs_time);
