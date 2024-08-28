@@ -24,10 +24,6 @@ void condition_variable::wait(std::unique_lock<std::mutex> &lock) {
             spore->m_cv_mutex = lock.mutex();
         }
 
-        if (spore->m_interrupted) {
-            spore->m_interrupted = false;
-            throw interrupted_exception();
-        }
         m_cv.wait(lock);
         if (spore->m_interrupted) {
             spore->m_interrupted = false;

@@ -28,11 +28,11 @@ template <class Pred> void condition_variable::wait(std::unique_lock<std::mutex>
         }
 
         while (!pred()) {
+            m_cv.wait(lock);
             if (spore->m_interrupted) {
                 spore->m_interrupted = false;
                 throw interrupted_exception();
             }
-            m_cv.wait(lock);
         }
     } else {
         m_cv.wait(lock, std::move(pred));
@@ -59,11 +59,6 @@ condition_variable::wait_until(std::unique_lock<std::mutex>                   &l
             lock.lock();
             spore->m_cv       = this;
             spore->m_cv_mutex = lock.mutex();
-        }
-
-        if (spore->m_interrupted) {
-            spore->m_interrupted = false;
-            throw interrupted_exception();
         }
 
         auto res = m_cv.wait_until(lock, abs_time);
@@ -101,11 +96,11 @@ bool condition_variable::wait_until(std::unique_lock<std::mutex>                
 
         std::cv_status status = std::cv_status::no_timeout;
         while (!pred() && std::cv_status::no_timeout == status) {
+            status = m_cv.wait_until(lock, abs_time);
             if (spore->m_interrupted) {
                 spore->m_interrupted = false;
                 throw interrupted_exception();
             }
-            status = m_cv.wait_until(lock, abs_time);
         }
         return pred();
     } else {
