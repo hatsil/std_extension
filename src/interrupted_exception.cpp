@@ -7,12 +7,12 @@
 using namespace std::string_literals;
 
 namespace ext {
-static std::string get_thread_id() {
+static std::string to_string(const std::thread::id &tid) {
     std::ostringstream out;
-    out << std::this_thread::get_id();
+    out << tid;
     return out.str();
 }
 
 interrupted_exception::interrupted_exception()
-    : exception("thread: "s + get_thread_id() + " interrupted") {}
+    : exception("thread: "s + to_string(std::this_thread::get_id()) + " interrupted") {}
 } // namespace ext
