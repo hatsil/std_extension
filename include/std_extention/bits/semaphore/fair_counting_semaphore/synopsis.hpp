@@ -1,7 +1,8 @@
 #pragma once
 
+#include "std_extention/condition_variable.hpp"
+
 #include <chrono>
-#include <condition_variable>
 #include <cstdint>
 #include <limits>
 #include <mutex>
@@ -51,9 +52,9 @@ private:
         bool try_acquire_for(const std::chrono::duration<Rep, Period> &rel_time);
 
     private:
-        bool                    m_isReleased;
-        std::mutex              m_mutex;
-        std::condition_variable m_cv;
+        bool               m_isReleased;
+        std::mutex         m_mutex;
+        condition_variable m_cv;
     };
 
     struct ThreadBlocker {
@@ -68,6 +69,8 @@ private:
     void           enqueue(ThreadBlocker *threadBlocker) noexcept;
     ThreadBlocker *dequeue() noexcept;
     void           remove(ThreadBlocker *threadBlocker) noexcept;
+
+    void releaseNext(ThreadBlocker &threadBlocker);
 
     std::size_t    m_value;
     std::size_t    m_waiting;

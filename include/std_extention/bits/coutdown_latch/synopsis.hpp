@@ -1,7 +1,8 @@
 #pragma once
 
+#include "std_extention/condition_variable.hpp"
+
 #include <chrono>
-#include <condition_variable>
 #include <cstddef>
 #include <mutex>
 
@@ -26,8 +27,8 @@ public:
     std::size_t count() const noexcept;
 
 private:
-    std::size_t                     m_count;
-    mutable std::mutex              m_mutex;
-    mutable std::condition_variable m_cv;
+    std::size_t                m_count;
+    mutable std::mutex         m_mutex;
+    mutable condition_variable m_cv;
 };
 } // namespace ext

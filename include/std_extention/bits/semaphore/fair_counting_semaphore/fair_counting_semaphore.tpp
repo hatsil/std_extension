@@ -1,5 +1,6 @@
 #pragma once
 
+#include "std_extention/deferred_task.hpp"
 #include "std_extention/exception.hpp"
 #include "synopsis.hpp"
 
@@ -102,19 +103,8 @@ template <std::size_t LeastMaxValue> void fair_counting_semaphore<LeastMaxValue>
         ++m_waiting;
         enqueue(std::addressof(threadBlocker));
     }
-
+    deferred_task defer([this, &threadBlocker] { releaseNext(threadBlocker); });
     threadBlocker.m_sem.acquire();
-    ThreadBlocker *next = nullptr;
-    {
-        std::lock_guard guard(m_mutex);
-        if (0 != --m_notified) {
-            next = dequeue();
-        }
-    }
-
-    if (nullptr != next) {
-        next->m_sem.release();
-    }
 }
 
 template <std::size_t LeastMaxValue>
@@ -146,7 +136,22 @@ bool fair_counting_semaphore<LeastMaxValue>::try_acquire_until(
         ++m_waiting;
         enqueue(std::addressof(threadBlocker));
     }
-    threadBlocker.m_sem.try_acquire_until(abs_time);
+    {
+        deferred_task defer([this, &threadBlocker] { releaseNext(threadBlocker); });
+        threadBlocker.m_sem.try_acquire_until(abs_time);
+    }
+    return threadBlocker.m_released;
+}
+
+template <std::size_t LeastMaxValue>
+template <class Rep, class Period>
+bool fair_counting_semaphore<LeastMaxValue>::try_acquire_for(
+    const std::chrono::duration<Rep, Period> &rel_time) {
+    return try_acquire_until(std::chrono::steady_clock::now() + rel_time);
+}
+
+template <std::size_t LeastMaxValue>
+void fair_counting_semaphore<LeastMaxValue>::releaseNext(ThreadBlocker &threadBlocker) {
     ThreadBlocker *next = nullptr;
     {
         std::lock_guard guard(m_mutex);
@@ -163,15 +168,6 @@ bool fair_counting_semaphore<LeastMaxValue>::try_acquire_until(
     if (nullptr != next) {
         next->m_sem.release();
     }
-
-    return threadBlocker.m_released;
-}
-
-template <std::size_t LeastMaxValue>
-template <class Rep, class Period>
-bool fair_counting_semaphore<LeastMaxValue>::try_acquire_for(
-    const std::chrono::duration<Rep, Period> &rel_time) {
-    return try_acquire_until(std::chrono::steady_clock::now() + rel_time);
 }
 
 template <std::size_t LeastMaxValue>

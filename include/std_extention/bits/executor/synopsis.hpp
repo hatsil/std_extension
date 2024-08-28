@@ -1,6 +1,7 @@
 #pragma once
 
 #include "std_extention/blocking_deque.hpp"
+#include "std_extention/thread.hpp"
 
 #include <atomic>
 #include <concepts>
@@ -56,7 +57,7 @@ private:
         STOP,
     };
     std::atomic_long                                 m_activeness;
-    std::vector<std::thread>                         m_workers;
+    std::vector<thread>                              m_workers;
     blocking_deque<std::move_only_function<State()>> m_tasks;
 };
 } // namespace ext

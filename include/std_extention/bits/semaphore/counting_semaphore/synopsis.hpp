@@ -1,7 +1,8 @@
 #pragma once
 
+#include "std_extention/condition_variable.hpp"
+
 #include <chrono>
-#include <condition_variable>
 #include <cstdint>
 #include <limits>
 #include <mutex>
@@ -32,11 +33,11 @@ public:
     bool try_acquire_for(const std::chrono::duration<Rep, Period> &rel_time);
 
 private:
-    std::size_t             m_value;
-    std::size_t             m_waiting;
-    std::size_t             m_notified;
-    std::mutex              m_mutex;
-    std::condition_variable m_cv;
+    std::size_t        m_value;
+    std::size_t        m_waiting;
+    std::size_t        m_notified;
+    std::mutex         m_mutex;
+    condition_variable m_cv;
 };
 
 using binary_semaphore = counting_semaphore<1>;

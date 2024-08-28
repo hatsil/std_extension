@@ -10,16 +10,34 @@ executor::executor(std::size_t nthreads)
         throw exception("nthreads == 0");
     }
 
-    for (std::size_t i = 0; i < nthreads; i++) {
-        m_workers.emplace_back([this] {
-            for (;;) {
-                if (auto task = m_tasks.pop_front(); State::STOP == (*task)()) {
-                    m_tasks.emplace_front([] { return State::STOP; });
-                    return;
+    for (std::size_t i = 0; i < nthreads; i++) try {
+            m_workers.emplace_back([this] {
+                for (;;) {
+                    std::shared_ptr<std::move_only_function<State()>> task(nullptr);
+                    try {
+                        task = m_tasks.pop_front();
+                    } catch (...) {
+                        return;
+                    }
+                    State status = (*task)();
+                    while (State::STOP == status) try {
+                            m_tasks.emplace_front([] { return State::STOP; });
+                            return;
+                        } catch (...) {
+                            std::this_thread::yield(); // try again
+                        }
                 }
+            });
+        } catch (...) {
+            m_activeness = -2;
+            for (thread &worker : m_workers) {
+                worker.interrupt();
             }
-        });
-    }
+            for (thread &worker : m_workers) {
+                worker.join();
+            }
+            throw;
+        }
 }
 
 executor::~executor() {
@@ -48,12 +66,18 @@ void executor::shutdown(ShutdownPolicy policy) {
         std::this_thread::yield();
     }
 
-    if (ShutdownPolicy::GRACEFUL == policy) {
-        m_tasks.emplace_back([] { return State::STOP; });
-    } else {
-        m_tasks.emplace_front([] { return State::STOP; });
-    }
-    for (std::thread &worker : m_workers) {
+    for (;;) try {
+            if (ShutdownPolicy::GRACEFUL == policy) {
+                m_tasks.emplace_back([] { return State::STOP; });
+            } else {
+                m_tasks.emplace_front([] { return State::STOP; });
+            }
+            break;
+        } catch (...) {
+            std::this_thread::yield(); // try again
+        }
+
+    for (thread &worker : m_workers) {
         worker.join();
     }
     m_activeness = -2;
