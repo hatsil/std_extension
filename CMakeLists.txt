@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(std_extention CXX)
+project(std_extension CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 23)
@@ -22,14 +22,14 @@ endif()
 file(GLOB SOURCES "src/*.cpp")
 
 # Create the static library
-add_library(std_extention STATIC ${SOURCES})
+add_library(std_extension STATIC ${SOURCES})
 
-target_include_directories(std_extention PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_features(std_extention PUBLIC cxx_std_23)
+target_include_directories(std_extension PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(std_extension PUBLIC cxx_std_23)
 
 if(USE_BOOST_STACKTRACE)
-    target_compile_definitions(std_extention PUBLIC USE_BOOST_STACKTRACE)
-    target_link_libraries(std_extention PUBLIC Boost::stacktrace_backtrace)
+    target_compile_definitions(std_extension PUBLIC USE_BOOST_STACKTRACE)
+    target_link_libraries(std_extension PUBLIC Boost::stacktrace_backtrace)
 else()
-    target_link_libraries(std_extention PUBLIC -lstdc++exp)
+    target_link_libraries(std_extension PUBLIC -lstdc++exp)
 endif()

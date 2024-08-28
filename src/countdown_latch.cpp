@@ -1,4 +1,4 @@
-#include "std_extention/countdown_latch.hpp"
+#include "std_extension/countdown_latch.hpp"
 
 namespace ext {
 countdown_latch::countdown_latch(std::size_t count)

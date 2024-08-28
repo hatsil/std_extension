@@ -1,6 +1,6 @@
 #pragma once
 
-#include "std_extention/exception.hpp"
+#include "std_extension/exception.hpp"
 
 #include <atomic>
 #include <memory>

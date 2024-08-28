@@ -1,8 +1,8 @@
 #pragma once
 
-#include "std_extention/deferred_task.hpp"
-#include "std_extention/interrupted_exception.hpp"
-#include "std_extention/thread.hpp"
+#include "std_extension/deferred_task.hpp"
+#include "std_extension/interrupted_exception.hpp"
+#include "std_extension/thread.hpp"
 #include "synopsis.hpp"
 
 #include <utility>

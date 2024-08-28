@@ -1,5 +1,5 @@
-#include "std_extention/thread.hpp"
-#include "std_extention/condition_variable.hpp"
+#include "std_extension/thread.hpp"
+#include "std_extension/condition_variable.hpp"
 
 #include <system_error>
 

@@ -1,4 +1,4 @@
-#include "std_extention/interrupted_exception.hpp"
+#include "std_extension/interrupted_exception.hpp"
 
 #include <sstream>
 #include <string>

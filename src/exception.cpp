@@ -1,4 +1,4 @@
-#include "std_extention/exception.hpp"
+#include "std_extension/exception.hpp"
 
 namespace ext {
 exception::exception(std::string_view what_str)

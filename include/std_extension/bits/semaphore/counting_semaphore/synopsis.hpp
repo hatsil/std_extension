@@ -1,6 +1,6 @@
 #pragma once
 
-#include "std_extention/condition_variable.hpp"
+#include "std_extension/condition_variable.hpp"
 
 #include <chrono>
 #include <cstdint>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "std_extention/memory.hpp"
-#include "std_extention/semaphore.hpp"
+#include "std_extension/memory.hpp"
+#include "std_extension/semaphore.hpp"
 
 #include <concepts>
 #include <limits>

@@ -1,5 +1,5 @@
-#include "std_extention/exception.hpp"
-#include "std_extention/executor.hpp"
+#include "std_extension/exception.hpp"
+#include "std_extension/executor.hpp"
 
 #include <iostream>
 #include <mutex>

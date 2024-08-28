@@ -1,7 +1,7 @@
 #pragma once
 
-#include "std_extention/blocking_deque.hpp"
-#include "std_extention/thread.hpp"
+#include "std_extension/blocking_deque.hpp"
+#include "std_extension/thread.hpp"
 
 #include <atomic>
 #include <concepts>

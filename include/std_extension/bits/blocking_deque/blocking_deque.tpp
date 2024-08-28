@@ -1,6 +1,6 @@
 #pragma once
 
-#include "std_extention/memory.hpp"
+#include "std_extension/memory.hpp"
 #include "synopsis.hpp"
 
 #include <thread>

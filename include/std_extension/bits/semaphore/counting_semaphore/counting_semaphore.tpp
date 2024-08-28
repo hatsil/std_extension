@@ -1,8 +1,8 @@
 #pragma once
 
-#include "std_extention/deferred_task.hpp"
-#include "std_extention/exception.hpp"
-#include "std_extention/unexpected_deferred_task.hpp"
+#include "std_extension/deferred_task.hpp"
+#include "std_extension/exception.hpp"
+#include "std_extension/unexpected_deferred_task.hpp"
 #include "synopsis.hpp"
 
 #include <algorithm>

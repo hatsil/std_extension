@@ -1,4 +1,4 @@
-#include "std_extention/condition_variable.hpp"
+#include "std_extension/condition_variable.hpp"
 
 namespace ext {
 void condition_variable::notify_one() noexcept { m_cv.notify_one(); }
