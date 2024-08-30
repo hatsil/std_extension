@@ -69,14 +69,13 @@ void thread::interrupt() {
     if (!spore->m_thread.joinable()) {
         throw std::system_error(std::make_error_code(std::errc::invalid_argument));
     }
+    spore->m_interrupted = true;
     if (nullptr != spore->m_cv) {
-        {
-            std::lock_guard guard2(*(spore->m_cv_mutex));
-            spore->m_interrupted = true;
-        }
+        // lock and then immediately unlock the cv's mutex, to make sure that the thread went to
+        // sleep and hence released the mutex.
+        spore->m_cv_mutex->lock();
+        spore->m_cv_mutex->unlock();
         spore->m_cv->notify_all();
-    } else {
-        spore->m_interrupted = true;
     }
 }
 } // namespace ext

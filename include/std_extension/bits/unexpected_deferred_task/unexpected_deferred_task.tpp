@@ -3,22 +3,19 @@
 #include "synopsis.hpp"
 
 #include <exception>
+#include <functional>
+#include <utility>
 
 namespace ext {
-template <typename Func>
+template <std::invocable Func>
 unexpected_deferred_task<Func>::unexpected_deferred_task(Func &&func) noexcept(
-    std::is_nothrow_move_constructible_v<std::decay_t<Func>>)
+    std::is_nothrow_move_constructible_v<Func>)
     : m_uncaughtExceptions(std::uncaught_exceptions())
     , m_func(std::move(func)) {}
 
-template <typename Func>
-void unexpected_deferred_task<Func>::operator()() noexcept((std::declval<std::decay_t<Func>>())()) {
-    m_func();
-}
-
-template <typename Func> unexpected_deferred_task<Func>::~unexpected_deferred_task() {
+template <std::invocable Func> unexpected_deferred_task<Func>::~unexpected_deferred_task() {
     if (std::uncaught_exceptions() > m_uncaughtExceptions) {
-        m_func();
+        std::invoke(std::move(m_func));
     }
 }
 } // namespace ext

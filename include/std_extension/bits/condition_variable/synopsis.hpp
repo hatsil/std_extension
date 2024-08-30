@@ -38,6 +38,25 @@ public:
     std::condition_variable::native_handle_type native_handle();
 
 private:
+    struct Defer final {
+        explicit Defer(std::unique_lock<std::mutex> *lock, thread::Spore *spore) noexcept;
+
+        Defer(const Defer &)            = default;
+        Defer &operator=(const Defer &) = default;
+
+        ~Defer() = default;
+
+        void operator()() noexcept;
+
+    private:
+        std::unique_lock<std::mutex> *m_lock;
+        thread::Spore                *m_spore;
+    };
+
+    void                               checkInterrupted(thread::Spore &spore) const;
+    [[nodiscard]] deferred_task<Defer> registerCV(std::unique_lock<std::mutex> *lock,
+                                                  thread::Spore                *spore) noexcept;
+
     std::condition_variable m_cv;
 };
 } // namespace ext

@@ -2,6 +2,8 @@
 
 #include "std_extension/exception.hpp"
 
+#include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -9,8 +11,6 @@
 #include <unordered_map>
 
 namespace ext {
-class condition_variable;
-
 class thread final {
 public:
     thread();
@@ -25,15 +25,13 @@ public:
 
     ~thread();
 
-    // members
     void                            swap(thread &other) noexcept;
     bool                            joinable() const noexcept;
     void                            join();
     void                            detach();
     std::thread::id                 get_id() const noexcept;
     std::thread::native_handle_type native_handle();
-
-    void interrupt();
+    void                            interrupt();
 
 private:
     friend class condition_variable;
@@ -43,11 +41,11 @@ private:
 
         template <class F, class... Args> Spore(F &&f, Args &&...args);
 
-        bool                m_interrupted;
-        condition_variable *m_cv;
-        std::mutex         *m_cv_mutex;
-        std::thread         m_thread;
-        std::mutex          m_mutex;
+        std::atomic_bool         m_interrupted;
+        std::condition_variable *m_cv;
+        std::mutex              *m_cv_mutex;
+        std::thread              m_thread;
+        std::mutex               m_mutex;
     };
 
     static std::unordered_map<std::thread::id, std::shared_ptr<Spore>> &get_threads() noexcept;
