@@ -47,84 +47,65 @@ public:
     [[nodiscard]] bool try_push_front_for(const std::chrono::duration<Rep, Period> &rel_time,
                                           std::shared_ptr<E>                        element);
 
-    std::shared_ptr<E>               push_back(const E &element);
-    std::shared_ptr<E>               push_back(E &&element);
-    [[nodiscard]] std::shared_ptr<E> try_push_back(const E &element);
-    [[nodiscard]] std::shared_ptr<E> try_push_back(E &&element);
+    template <class U> std::shared_ptr<E> push_back(U &&element);
 
-    template <class Clock, class Duration>
+    template <class U> [[nodiscard]] std::shared_ptr<E> try_push_back(U &&element);
+
+    template <class Clock, class Duration, class U>
     [[nodiscard]] std::shared_ptr<E>
-    try_push_back_until(const std::chrono::time_point<Clock, Duration> &abs_time, const E &element);
+    try_push_back_until(const std::chrono::time_point<Clock, Duration> &abs_time, U &&element);
 
-    template <class Clock, class Duration>
+    template <class Rep, class Period, class U>
     [[nodiscard]] std::shared_ptr<E>
-    try_push_back_until(const std::chrono::time_point<Clock, Duration> &abs_time, E &&element);
+    try_push_back_for(const std::chrono::duration<Rep, Period> &rel_time, U &&element);
 
-    template <class Rep, class Period>
+    template <class U> std::shared_ptr<E> push_front(U &&element);
+
+    template <class U> [[nodiscard]] std::shared_ptr<E> try_push_front(U &&element);
+
+    template <class Clock, class Duration, class U>
     [[nodiscard]] std::shared_ptr<E>
-    try_push_back_for(const std::chrono::duration<Rep, Period> &rel_time, const E &element);
+    try_push_front_until(const std::chrono::time_point<Clock, Duration> &abs_time, U &&element);
 
-    template <class Rep, class Period>
+    template <class Rep, class Period, class U>
     [[nodiscard]] std::shared_ptr<E>
-    try_push_back_for(const std::chrono::duration<Rep, Period> &rel_time, E &&element);
+    try_push_front_for(const std::chrono::duration<Rep, Period> &rel_time, U &&element);
 
-    std::shared_ptr<E>               push_front(const E &element);
-    std::shared_ptr<E>               push_front(E &&element);
-    [[nodiscard]] std::shared_ptr<E> try_push_front(const E &element);
-    [[nodiscard]] std::shared_ptr<E> try_push_front(E &&element);
-
-    template <class Clock, class Duration>
-    [[nodiscard]] std::shared_ptr<E>
-    try_push_front_until(const std::chrono::time_point<Clock, Duration> &abs_time,
-                         const E                                        &element);
-
-    template <class Clock, class Duration>
-    [[nodiscard]] std::shared_ptr<E>
-    try_push_front_until(const std::chrono::time_point<Clock, Duration> &abs_time, E &&element);
-
-    template <class Rep, class Period>
-    [[nodiscard]] std::shared_ptr<E>
-    try_push_front_for(const std::chrono::duration<Rep, Period> &rel_time, const E &element);
-
-    template <class Rep, class Period>
-    [[nodiscard]] std::shared_ptr<E>
-    try_push_front_for(const std::chrono::duration<Rep, Period> &rel_time, E &&element);
-
-    template <class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     std::shared_ptr<E> emplace_back(Args &&...args);
 
-    template <class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E> try_emplace_back(Args &&...args);
 
-    template <class Clock, class Duration, class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class Clock, class Duration, class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_back_until(const std::chrono::time_point<Clock, Duration> &abs_time,
                            Args &&...args);
 
-    template <class Rep, class Period, class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class Rep, class Period, class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_back_for(const std::chrono::duration<Rep, Period> &rel_time, Args &&...args);
 
-    template <class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     std::shared_ptr<E> emplace_front(Args &&...args);
 
-    template <class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E> try_emplace_front(Args &&...args);
 
-    template <class Clock, class Duration, class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class Clock, class Duration, class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_front_until(const std::chrono::time_point<Clock, Duration> &abs_time,
                             Args &&...args);
 
-    template <class Rep, class Period, class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class Rep, class Period, class U = E, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E>
     try_emplace_front_for(const std::chrono::duration<Rep, Period> &rel_time, Args &&...args);
 
@@ -187,8 +168,8 @@ private:
 
     static void release(CountingSemaphore &sem) noexcept;
 
-    template <class... Args>
-        requires std::constructible_from<E, Args...>
+    template <class U, class... Args>
+        requires std::constructible_from<U, Args...>
     [[nodiscard]] std::shared_ptr<E> newElement(Args &&...args) const;
 
     void               push(Position pos, std::shared_ptr<E> element);

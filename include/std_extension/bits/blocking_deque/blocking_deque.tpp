@@ -21,19 +21,18 @@ blocking_deque<E, Allocator, CountingSemaphore>::blocking_deque(const Allocator 
     , m_deque(AllocatorSharedPtr(alloc)) {}
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::size_t blocking_deque<E, Allocator, CountingSemaphore>::size() const noexcept {
+std::size_t blocking_deque<E, Allocator, CountingSemaphore>::size() const noexcept {
     std::lock_guard guard(m_mutex);
     return m_deque.size();
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::size_t
-blocking_deque<E, Allocator, CountingSemaphore>::capacity() const noexcept {
+std::size_t blocking_deque<E, Allocator, CountingSemaphore>::capacity() const noexcept {
     return m_maxCapacity;
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::empty() const noexcept {
+bool blocking_deque<E, Allocator, CountingSemaphore>::empty() const noexcept {
     std::lock_guard guard(m_mutex);
     return m_deque.empty();
 }
@@ -49,11 +48,11 @@ void blocking_deque<E, Allocator, CountingSemaphore>::release(CountingSemaphore 
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
+template <class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E>
 blocking_deque<E, Allocator, CountingSemaphore>::newElement(Args &&...args) const {
-    return ::ext::make_shared<E>(m_alloc, std::forward<Args>(args)...);
+    return ::ext::make_shared<U>(m_alloc, std::forward<Args>(args)...);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
@@ -75,9 +74,8 @@ void blocking_deque<E, Allocator, CountingSemaphore>::push(Position           po
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] bool
-blocking_deque<E, Allocator, CountingSemaphore>::try_push(Position           pos,
-                                                          std::shared_ptr<E> element) {
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push(Position           pos,
+                                                               std::shared_ptr<E> element) {
     if (m_semPush.try_acquire()) {
         std::lock_guard guard(m_mutex);
         try {
@@ -98,7 +96,7 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_push(Position           pos
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_until(
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_until(
     Position pos, const std::chrono::time_point<Clock, Duration> &abs_time,
     std::shared_ptr<E> element) {
     if (m_semPush.try_acquire_until(abs_time)) {
@@ -121,14 +119,13 @@ template <class Clock, class Duration>
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_for(
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_for(
     Position pos, const std::chrono::duration<Rep, Period> &rel_time, std::shared_ptr<E> element) {
     return try_push_until(pos, std::chrono::steady_clock::now() + rel_time, std::move(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::pop(Position pos) {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::pop(Position pos) {
     m_semPop.acquire();
     std::lock_guard    guard(m_mutex);
     std::shared_ptr<E> res = Position::BACK == pos ? m_deque.back() : m_deque.front();
@@ -144,8 +141,7 @@ blocking_deque<E, Allocator, CountingSemaphore>::pop(Position pos) {
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_pop(Position pos) {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop(Position pos) {
     std::shared_ptr<E> res = nullptr;
     if (m_semPop.try_acquire()) {
         std::lock_guard guard(m_mutex);
@@ -164,7 +160,7 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_pop(Position pos) {
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_until(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_until(
     Position pos, const std::chrono::time_point<Clock, Duration> &abs_time) {
     std::shared_ptr<E> res = nullptr;
     if (m_semPop.try_acquire_until(abs_time)) {
@@ -184,7 +180,7 @@ template <class Clock, class Duration>
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_for(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_for(
     Position pos, const std::chrono::duration<Rep, Period> &rel_time) {
     return try_pop_until(pos, std::chrono::steady_clock::now() + rel_time);
 }
@@ -195,21 +191,20 @@ void blocking_deque<E, Allocator, CountingSemaphore>::push_back(std::shared_ptr<
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] bool
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_back(std::shared_ptr<E> element) {
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_back(std::shared_ptr<E> element) {
     return try_push(Position::BACK, std::move(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_until(
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_until(
     const std::chrono::time_point<Clock, Duration> &abs_time, std::shared_ptr<E> element) {
     return try_push_until(Position::BACK, abs_time, std::move(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_for(
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_for(
     const std::chrono::duration<Rep, Period> &rel_time, std::shared_ptr<E> element) {
     return try_push_for(Position::BACK, rel_time, std::move(element));
 }
@@ -220,43 +215,36 @@ void blocking_deque<E, Allocator, CountingSemaphore>::push_front(std::shared_ptr
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] bool
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front(std::shared_ptr<E> element) {
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_front(std::shared_ptr<E> element) {
     return try_push(Position::FRONT, std::move(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_until(
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_until(
     const std::chrono::time_point<Clock, Duration> &abs_time, std::shared_ptr<E> element) {
     return try_push_until(Position::FRONT, abs_time, std::move(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_for(
+bool blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_for(
     const std::chrono::duration<Rep, Period> &rel_time, std::shared_ptr<E> element) {
     return try_push_for(Position::FRONT, rel_time, std::move(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::push_back(const E &element) {
-    std::shared_ptr<E> res = newElement(element);
+template <class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::push_back(U &&element) {
+    std::shared_ptr<E> res = newElement<U>(std::forward<U>(element));
     push_back(res);
     return res;
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::push_back(E &&element) {
-    std::shared_ptr<E> res = newElement(std::move(element));
-    push_back(res);
-    return res;
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_back(const E &element) {
-    std::shared_ptr<E> res = newElement(element);
+template <class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_back(U &&element) {
+    std::shared_ptr<E> res = newElement<U>(std::forward<U>(element));
     if (!try_push_back(res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -264,21 +252,10 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_push_back(const E &element)
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_back(E &&element) {
-    std::shared_ptr<E> res = newElement(std::move(element));
-    if (!try_push_back(res)) {
-        return std::shared_ptr<E>(nullptr);
-    }
-    return res;
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_until(
-    const std::chrono::time_point<Clock, Duration> &abs_time, const E &element) {
-    std::shared_ptr<E> res = newElement(element);
+template <class Clock, class Duration, class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_until(
+    const std::chrono::time_point<Clock, Duration> &abs_time, U &&element) {
+    std::shared_ptr<E> res = newElement<U>(std::forward<U>(element));
     if (!try_push_back_until(abs_time, res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -286,49 +263,25 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_until(
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_until(
-    const std::chrono::time_point<Clock, Duration> &abs_time, E &&element) {
-    std::shared_ptr<E> res = newElement(std::move(element));
-    if (!try_push_back_until(abs_time, res)) {
-        return std::shared_ptr<E>(nullptr);
-    }
-    return res;
+template <class Rep, class Period, class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_for(
+    const std::chrono::duration<Rep, Period> &rel_time, U &&element) {
+    return try_push_back_until(std::chrono::steady_clock::now() + rel_time,
+                               std::forward<U>(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_for(
-    const std::chrono::duration<Rep, Period> &rel_time, const E &element) {
-    return try_push_back_until(std::chrono::steady_clock::now() + rel_time, element);
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_back_for(
-    const std::chrono::duration<Rep, Period> &rel_time, E &&element) {
-    return try_push_back_until(std::chrono::steady_clock::now() + rel_time, std::move(element));
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::push_front(const E &element) {
-    std::shared_ptr<E> res = newElement(element);
+template <class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::push_front(U &&element) {
+    std::shared_ptr<E> res = newElement<U>(std::forward<U>(element));
     push_front(res);
     return res;
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::push_front(E &&element) {
-    std::shared_ptr<E> res = newElement(std::move(element));
-    push_front(res);
-    return res;
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front(const E &element) {
-    std::shared_ptr<E> res = newElement(element);
+template <class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_front(U &&element) {
+    std::shared_ptr<E> res = newElement<U>(std::forward<U>(element));
     if (!try_push_front(res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -336,21 +289,10 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_push_front(const E &element
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front(E &&element) {
-    std::shared_ptr<E> res = newElement(std::move(element));
-    if (!try_push_front(res)) {
-        return std::shared_ptr<E>(nullptr);
-    }
-    return res;
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_until(
-    const std::chrono::time_point<Clock, Duration> &abs_time, const E &element) {
-    std::shared_ptr<E> res = newElement(element);
+template <class Clock, class Duration, class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_until(
+    const std::chrono::time_point<Clock, Duration> &abs_time, U &&element) {
+    std::shared_ptr<E> res = newElement<U>(std::forward<U>(element));
     if (!try_push_front_until(abs_time, res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -358,48 +300,28 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_until(
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_until(
-    const std::chrono::time_point<Clock, Duration> &abs_time, E &&element) {
-    std::shared_ptr<E> res = newElement(std::move(element));
-    if (!try_push_front_until(abs_time, res)) {
-        return std::shared_ptr<E>(nullptr);
-    }
-    return res;
+template <class Rep, class Period, class U>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_for(
+    const std::chrono::duration<Rep, Period> &rel_time, U &&element) {
+    return try_push_front_until(std::chrono::steady_clock::now() + rel_time,
+                                std::forward<U>(element));
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_for(
-    const std::chrono::duration<Rep, Period> &rel_time, const E &element) {
-    return try_push_front_until(std::chrono::steady_clock::now() + rel_time, element);
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_push_front_for(
-    const std::chrono::duration<Rep, Period> &rel_time, E &&element) {
-    return try_push_front_until(std::chrono::steady_clock::now() + rel_time, std::move(element));
-}
-
-template <class E, class Allocator, class CountingSemaphore>
-template <class... Args>
-    requires std::constructible_from<E, Args...>
+template <class U, class... Args>
+    requires std::constructible_from<U, Args...>
 std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::emplace_back(Args &&...args) {
-    std::shared_ptr<E> res = newElement(std::forward<Args>(args)...);
+    std::shared_ptr<E> res = newElement<U>(std::forward<Args>(args)...);
     push_back(res);
     return res;
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
+template <class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E>
 blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back(Args &&...args) {
-    std::shared_ptr<E> res = newElement(std::forward<Args>(args)...);
+    std::shared_ptr<E> res = newElement<U>(std::forward<Args>(args)...);
     if (!try_push_back(res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -407,12 +329,11 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back(Args &&...args
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Clock, class Duration, class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back_until(
+template <class Clock, class Duration, class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back_until(
     const std::chrono::time_point<Clock, Duration> &abs_time, Args &&...args) {
-    std::shared_ptr<E> res = newElement(std::forward<Args>(args)...);
+    std::shared_ptr<E> res = newElement<U>(std::forward<Args>(args)...);
     if (!try_push_back_until(abs_time, res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -420,30 +341,29 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back_until(
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Rep, class Period, class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back_for(
+template <class Rep, class Period, class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_back_for(
     const std::chrono::duration<Rep, Period> &rel_time, Args &&...args) {
-    return try_emplace_back_until(std::chrono::steady_clock::now() + rel_time,
-                                  std::forward<Args>(args)...);
+    return try_emplace_back_until<U>(std::chrono::steady_clock::now() + rel_time,
+                                     std::forward<Args>(args)...);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class... Args>
-    requires std::constructible_from<E, Args...>
+template <class U, class... Args>
+    requires std::constructible_from<U, Args...>
 std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::emplace_front(Args &&...args) {
-    std::shared_ptr<E> res = newElement(std::forward<Args>(args)...);
+    std::shared_ptr<E> res = newElement<U>(std::forward<Args>(args)...);
     push_front(res);
     return res;
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
+template <class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E>
 blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front(Args &&...args) {
-    std::shared_ptr<E> res = newElement(std::forward<Args>(args)...);
+    std::shared_ptr<E> res = newElement<U>(std::forward<Args>(args)...);
     if (!try_push_front(res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -451,12 +371,11 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front(Args &&...arg
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Clock, class Duration, class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front_until(
+template <class Clock, class Duration, class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front_until(
     const std::chrono::time_point<Clock, Duration> &abs_time, Args &&...args) {
-    std::shared_ptr<E> res = newElement(std::forward<Args>(args)...);
+    std::shared_ptr<E> res = newElement<U>(std::forward<Args>(args)...);
     if (!try_push_front_until(abs_time, res)) {
         return std::shared_ptr<E>(nullptr);
     }
@@ -464,18 +383,16 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front_until(
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-template <class Rep, class Period, class... Args>
-    requires std::constructible_from<E, Args...>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front_for(
+template <class Rep, class Period, class U, class... Args>
+    requires std::constructible_from<U, Args...>
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_emplace_front_for(
     const std::chrono::duration<Rep, Period> &rel_time, Args &&...args) {
-    return try_emplace_front_until(std::chrono::steady_clock::now() + rel_time,
-                                   std::forward<Args>(args)...);
+    return try_emplace_front_until<U>(std::chrono::steady_clock::now() + rel_time,
+                                      std::forward<Args>(args)...);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::peek(Position pos) const {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::peek(Position pos) const {
     m_semPop.acquire();
     std::lock_guard    guard(m_mutex);
     std::shared_ptr<E> res = Position::BACK == pos ? m_deque.back() : m_deque.front();
@@ -484,7 +401,7 @@ blocking_deque<E, Allocator, CountingSemaphore>::peek(Position pos) const {
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
+std::shared_ptr<E>
 blocking_deque<E, Allocator, CountingSemaphore>::try_peek(Position pos) const noexcept {
     std::shared_ptr<E> res = nullptr;
     if (m_semPop.try_acquire()) {
@@ -497,7 +414,7 @@ blocking_deque<E, Allocator, CountingSemaphore>::try_peek(Position pos) const no
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_peek_until(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_peek_until(
     Position pos, const std::chrono::time_point<Clock, Duration> &abs_time) const {
     std::shared_ptr<E> res = nullptr;
     if (m_semPop.try_acquire_until(abs_time)) {
@@ -510,107 +427,103 @@ template <class Clock, class Duration>
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_peek_for(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_peek_for(
     Position pos, const std::chrono::duration<Rep, Period> &rel_time) const {
     return try_peek_until(pos, std::chrono::steady_clock::now() + rel_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::back() const {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::back() const {
     return peek(Position::BACK);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_back() const noexcept {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_back() const noexcept {
     return try_peek(Position::BACK);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_back_for(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_back_for(
     const std::chrono::duration<Rep, Period> &rel_time) const {
     return try_peek_for(Position::BACK, rel_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_back_until(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_back_until(
     const std::chrono::time_point<Clock, Duration> &abs_time) const {
     return try_peek_for(Position::BACK, abs_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::front() const {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::front() const {
     return peek(Position::FRONT);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_front() const noexcept {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_front() const noexcept {
     return try_peek(Position::FRONT);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_front_for(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_front_for(
     const std::chrono::duration<Rep, Period> &rel_time) const {
     return try_peek_for(Position::FRONT, rel_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_front_until(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_front_until(
     const std::chrono::time_point<Clock, Duration> &abs_time) const {
     return try_peek_for(Position::FRONT, abs_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::pop_back() {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::pop_back() {
     return pop(Position::BACK);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_back() {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_back() {
     return try_pop(Position::BACK);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_back_for(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_back_for(
     const std::chrono::duration<Rep, Period> &rel_time) {
     return try_pop_for(Position::BACK, rel_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_pop_back_until(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_back_until(
     const std::chrono::time_point<Clock, Duration> &abs_time) {
     return try_pop_until(Position::BACK, abs_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::pop_front() {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::pop_front() {
     return pop(Position::FRONT);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_front() {
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_front() {
     return try_pop(Position::FRONT);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Rep, class Period>
-[[nodiscard]] std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_front_for(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_front_for(
     const std::chrono::duration<Rep, Period> &rel_time) {
     return try_pop_for(Position::FRONT, rel_time);
 }
 
 template <class E, class Allocator, class CountingSemaphore>
 template <class Clock, class Duration>
-[[nodiscard]] std::shared_ptr<E>
-blocking_deque<E, Allocator, CountingSemaphore>::try_pop_front_until(
+std::shared_ptr<E> blocking_deque<E, Allocator, CountingSemaphore>::try_pop_front_until(
     const std::chrono::time_point<Clock, Duration> &abs_time) {
     return try_pop_until(Position::FRONT, abs_time);
 }
