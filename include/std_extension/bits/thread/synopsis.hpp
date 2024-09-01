@@ -13,7 +13,7 @@
 namespace ext {
 class thread final {
 public:
-    thread();
+    thread() noexcept;
 
     template <class F, class... Args> explicit thread(F &&f, Args &&...args);
 
@@ -23,7 +23,7 @@ public:
     thread(const thread &)            = delete;
     thread &operator=(const thread &) = delete;
 
-    ~thread();
+    ~thread() = default;
 
     void                            swap(thread &other) noexcept;
     bool                            joinable() const noexcept;
@@ -37,9 +37,10 @@ private:
     friend class condition_variable;
 
     struct Spore {
-        Spore() noexcept;
+        template <class F, class... Args> explicit Spore(F &&f, Args &&...args);
 
-        template <class F, class... Args> Spore(F &&f, Args &&...args);
+        Spore(const Spore &)            = delete;
+        Spore &operator=(const Spore &) = delete;
 
         std::atomic_bool         m_interrupted;
         std::condition_variable *m_cv;

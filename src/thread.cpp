@@ -22,26 +22,22 @@ std::shared_ptr<thread::Spore> thread::get_spore() {
     return threads.end() == it ? nullptr : it->second;
 }
 
-thread::Spore::Spore() noexcept
-    : m_interrupted(false)
-    , m_cv(nullptr) {}
-
-thread::thread()
-    : m_spore(std::make_shared<Spore>()) {}
-
-thread::~thread() {
-    auto           &threads = get_threads();
-    std::lock_guard guard(get_mutex());
-    threads.erase(get_id());
-}
+thread::thread() noexcept
+    : m_spore(nullptr) {}
 
 void thread::swap(thread &other) noexcept { m_spore.swap(other.m_spore); }
 
-bool thread::joinable() const noexcept { return m_spore->m_thread.joinable(); }
+bool thread::joinable() const noexcept {
+    std::shared_ptr<Spore> spore = m_spore;
+    return spore ? spore->m_thread.joinable() : false;
+}
 
 void thread::join() {
     std::shared_ptr<Spore> spore = m_spore;
-    std::thread::id        tid   = spore->m_thread.get_id();
+    if (nullptr == spore) {
+        throw std::system_error(std::make_error_code(std::errc::invalid_argument));
+    }
+    std::thread::id tid = spore->m_thread.get_id();
     spore->m_thread.join();
     auto           &threads = get_threads();
     std::lock_guard guard(get_mutex());
@@ -49,26 +45,40 @@ void thread::join() {
 }
 
 void thread::detach() {
-    auto                  &threads = get_threads();
-    std::shared_ptr<Spore> spore   = m_spore;
-    std::lock_guard        guard(spore->m_mutex);
+    std::shared_ptr<Spore> spore = m_spore;
+    if (nullptr == spore) {
+        throw std::system_error(std::make_error_code(std::errc::invalid_argument));
+    }
+    auto           &threads = get_threads();
+    std::lock_guard guard(spore->m_mutex);
     threads.erase(spore->m_thread.get_id());
     spore->m_thread.detach();
 }
 
-std::thread::id thread::get_id() const noexcept { return m_spore->m_thread.get_id(); }
+std::thread::id thread::get_id() const noexcept {
+    std::shared_ptr<Spore> spore = m_spore;
+    if (nullptr == spore) {
+        return std::thread::id();
+    }
+    return spore->m_thread.get_id();
+}
 
 std::thread::native_handle_type thread::native_handle() {
-    return m_spore->m_thread.native_handle();
+    std::shared_ptr<Spore> spore = m_spore;
+    if (nullptr == spore) {
+        throw std::system_error(std::make_error_code(std::errc::invalid_argument));
+    }
+    return spore->m_thread.native_handle();
 }
 
 void thread::interrupt() {
     std::shared_ptr<Spore> spore = m_spore;
-    std::lock_guard        guard(spore->m_mutex);
 
-    if (!spore->m_thread.joinable()) {
+    if (nullptr == spore || !spore->m_thread.joinable()) {
         throw std::system_error(std::make_error_code(std::errc::invalid_argument));
     }
+
+    std::lock_guard guard(spore->m_mutex);
     spore->m_interrupted = true;
     if (nullptr != spore->m_cv) {
         // lock and then immediately unlock the cv's mutex, to make sure that the thread went to
