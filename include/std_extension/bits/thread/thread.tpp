@@ -13,11 +13,8 @@ void sleep_until(const std::chrono::time_point<Clock, Duration> &sleep_time) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
         deferred_task defer([&spore] {
-            {
-                std::lock_guard guard(spore->m_mutex);
-                spore->m_cv_cv = nullptr;
-            }
-            spore->m_cv.notify_all();
+            std::lock_guard guard(spore->m_mutex);
+            spore->m_cv_cv = nullptr;
         });
 
         std::condition_variable cv;

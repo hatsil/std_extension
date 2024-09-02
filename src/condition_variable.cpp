@@ -6,11 +6,8 @@ condition_variable::Defer::Defer(thread::Spore &spore) noexcept
     : m_spore(spore) {}
 
 void condition_variable::Defer::operator()() noexcept {
-    {
-        std::lock_guard guard(m_spore.m_mutex);
-        m_spore.m_cv_cv = nullptr;
-    }
-    m_spore.m_cv.notify_all();
+    std::lock_guard guard(m_spore.m_mutex);
+    m_spore.m_cv_cv = nullptr;
 }
 
 deferred_task<condition_variable::Defer>

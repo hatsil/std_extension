@@ -85,10 +85,12 @@ void thread::interrupt() {
     }
 
     spore->m_interrupted = true;
-    std::unique_lock lock(spore->m_mutex);
+    std::lock_guard guard(spore->m_mutex);
     while (nullptr != spore->m_cv_cv && spore->m_interrupted) {
         spore->m_cv_cv->notify_all();
-        spore->m_cv.wait(lock);
+        spore->m_mutex.unlock();
+        std::this_thread::yield();
+        spore->m_mutex.lock();
     }
 }
 } // namespace ext

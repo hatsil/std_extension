@@ -60,7 +60,6 @@ private:
         std::atomic_bool         m_interrupted;
         std::condition_variable *m_cv_cv;
         std::thread              m_thread;
-        std::condition_variable  m_cv;
         std::mutex               m_mutex;
     };
 
