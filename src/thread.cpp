@@ -95,3 +95,7 @@ void thread::interrupt() {
     }
 }
 } // namespace ext
+
+namespace std {
+void swap(ext::thread &lhs, ext::thread &rhs) noexcept { lhs.swap(rhs); }
+} // namespace std

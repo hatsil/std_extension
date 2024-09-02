@@ -71,3 +71,7 @@ private:
     std::shared_ptr<Spore> m_spore;
 };
 } // namespace ext
+
+namespace std {
+void swap(ext::thread &lhs, ext::thread &rhs) noexcept;
+}
