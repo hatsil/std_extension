@@ -3,6 +3,7 @@
 #include "std_extension/exception.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -11,6 +12,16 @@
 #include <unordered_map>
 
 namespace ext {
+namespace this_thread {
+void            yield() noexcept;
+std::thread::id get_id() noexcept;
+
+template <class Clock, class Duration>
+void sleep_until(const std::chrono::time_point<Clock, Duration> &sleep_time);
+
+template <class Rep, class Period>
+void sleep_for(const std::chrono::duration<Rep, Period> &sleep_duration);
+} // namespace this_thread
 class thread final {
 public:
     thread() noexcept;
@@ -35,6 +46,10 @@ public:
 
 private:
     friend class condition_variable;
+
+    template <class Clock, class Duration>
+    friend void
+    this_thread::sleep_until(const std::chrono::time_point<Clock, Duration> &sleep_time);
 
     struct Spore {
         template <class F, class... Args> explicit Spore(F &&f, Args &&...args);

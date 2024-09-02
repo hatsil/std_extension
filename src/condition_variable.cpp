@@ -20,7 +20,7 @@ condition_variable::registerCV(std::unique_lock<std::mutex> *lock, thread::Spore
     return deferred_task(Defer(lock, spore));
 }
 
-void condition_variable::checkInterrupted(thread::Spore &spore) const {
+void condition_variable::checkInterrupted(thread::Spore &spore) {
     if (spore.m_interrupted.exchange(false)) {
         throw interrupted_exception();
     }

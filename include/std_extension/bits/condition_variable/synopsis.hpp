@@ -53,7 +53,7 @@ private:
         thread::Spore                *m_spore;
     };
 
-    void                               checkInterrupted(thread::Spore &spore) const;
+    static void                        checkInterrupted(thread::Spore &spore);
     [[nodiscard]] deferred_task<Defer> registerCV(std::unique_lock<std::mutex> *lock,
                                                   thread::Spore                *spore) noexcept;
 

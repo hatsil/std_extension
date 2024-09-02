@@ -4,6 +4,12 @@
 #include <system_error>
 
 namespace ext {
+namespace this_thread {
+void yield() noexcept { std::this_thread::yield(); }
+
+std::thread::id get_id() noexcept { return std::this_thread::get_id(); }
+} // namespace this_thread
+
 std::unordered_map<std::thread::id, std::shared_ptr<thread::Spore>> &
 thread::get_threads() noexcept {
     static std::unordered_map<std::thread::id, std::shared_ptr<Spore>> threads;
