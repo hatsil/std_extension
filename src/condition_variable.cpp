@@ -2,22 +2,22 @@
 
 #include <memory>
 namespace ext {
-condition_variable::Defer::Defer(std::unique_lock<std::mutex> *lock, thread::Spore *spore) noexcept
-    : m_lock(lock)
-    , m_spore(spore) {}
+condition_variable::Defer::Defer(thread::Spore &spore) noexcept
+    : m_spore(spore) {}
 
 void condition_variable::Defer::operator()() noexcept {
-    std::lock_guard guard(m_spore->m_mutex);
-    m_spore->m_cv       = nullptr;
-    m_spore->m_cv_mutex = nullptr;
+    {
+        std::lock_guard guard(m_spore.m_mutex);
+        m_spore.m_cv_cv = nullptr;
+    }
+    m_spore.m_cv.notify_all();
 }
 
 deferred_task<condition_variable::Defer>
-condition_variable::registerCV(std::unique_lock<std::mutex> *lock, thread::Spore *spore) noexcept {
-    std::lock_guard guard(spore->m_mutex);
-    spore->m_cv       = std::addressof(m_cv);
-    spore->m_cv_mutex = lock->mutex();
-    return deferred_task(Defer(lock, spore));
+condition_variable::registerCV(thread::Spore &spore) noexcept {
+    std::lock_guard guard(spore.m_mutex);
+    spore.m_cv_cv = std::addressof(m_cv);
+    return deferred_task(Defer(spore));
 }
 
 void condition_variable::checkInterrupted(thread::Spore &spore) {
@@ -33,7 +33,7 @@ void condition_variable::notify_all() noexcept { m_cv.notify_all(); }
 void condition_variable::wait(std::unique_lock<std::mutex> &lock) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        auto defer = registerCV(std::addressof(lock), spore.get());
+        auto defer = registerCV(*spore);
         checkInterrupted(*spore);
         m_cv.wait(lock);
         checkInterrupted(*spore);

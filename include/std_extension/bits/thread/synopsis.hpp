@@ -58,9 +58,9 @@ private:
         Spore &operator=(const Spore &) = delete;
 
         std::atomic_bool         m_interrupted;
-        std::condition_variable *m_cv;
-        std::mutex              *m_cv_mutex;
+        std::condition_variable *m_cv_cv;
         std::thread              m_thread;
+        std::condition_variable  m_cv;
         std::mutex               m_mutex;
     };
 

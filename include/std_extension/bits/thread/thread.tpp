@@ -12,20 +12,21 @@ template <class Clock, class Duration>
 void sleep_until(const std::chrono::time_point<Clock, Duration> &sleep_time) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
+        deferred_task defer([&spore] {
+            {
+                std::lock_guard guard(spore->m_mutex);
+                spore->m_cv_cv = nullptr;
+            }
+            spore->m_cv.notify_all();
+        });
+
         std::condition_variable cv;
         std::mutex              mutex;
         std::unique_lock        lock(mutex);
 
-        deferred_task defer([&spore] {
-            std::lock_guard guard(spore->m_mutex);
-            spore->m_cv       = nullptr;
-            spore->m_cv_mutex = nullptr;
-        });
-
         {
             std::lock_guard guard(spore->m_mutex);
-            spore->m_cv       = std::addressof(cv);
-            spore->m_cv_mutex = std::addressof(mutex);
+            spore->m_cv_cv = std::addressof(cv);
         }
 
         if (spore->m_interrupted.exchange(false)) {
@@ -52,8 +53,7 @@ void sleep_for(const std::chrono::duration<Rep, Period> &sleep_duration) {
 template <class F, class... Args>
 thread::Spore::Spore(F &&f, Args &&...args)
     : m_interrupted(false)
-    , m_cv(nullptr)
-    , m_cv_mutex(nullptr)
+    , m_cv_cv(nullptr)
     , m_thread(std::forward<F>(f), std::forward<Args>(args)...) {}
 
 template <class F, class... Args>

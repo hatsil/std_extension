@@ -84,14 +84,11 @@ void thread::interrupt() {
         throw std::system_error(std::make_error_code(std::errc::invalid_argument));
     }
 
-    std::lock_guard guard(spore->m_mutex);
     spore->m_interrupted = true;
-    if (nullptr != spore->m_cv) {
-        // lock and then immediately unlock the cv's mutex, to make sure that the thread went to
-        // sleep and hence released the mutex.
-        spore->m_cv_mutex->lock();
-        spore->m_cv_mutex->unlock();
-        spore->m_cv->notify_all();
+    std::unique_lock lock(spore->m_mutex);
+    while (nullptr != spore->m_cv_cv && spore->m_interrupted) {
+        spore->m_cv_cv->notify_all();
+        spore->m_cv.wait(lock);
     }
 }
 } // namespace ext

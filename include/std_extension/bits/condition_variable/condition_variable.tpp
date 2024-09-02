@@ -11,7 +11,7 @@ namespace ext {
 template <class Pred> void condition_variable::wait(std::unique_lock<std::mutex> &lock, Pred pred) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        auto defer = registerCV(std::addressof(lock), spore.get());
+        auto defer = registerCV(*spore);
         checkInterrupted(*spore);
         while (!pred()) {
             m_cv.wait(lock);
@@ -28,7 +28,7 @@ condition_variable::wait_until(std::unique_lock<std::mutex>                   &l
                                const std::chrono::time_point<Clock, Duration> &abs_time) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        auto defer = registerCV(std::addressof(lock), spore.get());
+        auto defer = registerCV(*spore);
         checkInterrupted(*spore);
         auto res = m_cv.wait_until(lock, abs_time);
         checkInterrupted(*spore);
@@ -44,7 +44,7 @@ bool condition_variable::wait_until(std::unique_lock<std::mutex>                
                                     Pred                                            pred) {
     std::shared_ptr<thread::Spore> spore = thread::get_spore();
     if (nullptr != spore) {
-        auto defer = registerCV(std::addressof(lock), spore.get());
+        auto defer = registerCV(*spore);
         checkInterrupted(*spore);
         std::cv_status status = std::cv_status::no_timeout;
         while (!pred() && std::cv_status::no_timeout == status) {
