@@ -8,25 +8,23 @@
 #include <type_traits>
 
 namespace ext {
-template <std::destructible E> constexpr void destroy_at(E *element) {
-    using EType = typename std::remove_all_extents_t<E>;
-    if constexpr (std::is_array_v<E>) {
-        using ElementType       = typename std::remove_extent_t<E>;
-        constexpr std::size_t N = sizeof(E) / sizeof(ElementType);
-        auto array = static_cast<std::array<ElementType, N> *>(static_cast<void *>(element));
-        for (auto it = array->rbegin(); it != array->rend(); ++it) {
-            ext::destroy_at(std::addressof(*it));
-        }
-    } else if constexpr (!std::is_standard_layout_v<EType> || !std::is_trivial_v<EType>) {
-        element->~E();
-    }
-}
-
 namespace detail {
 constexpr inline void *voidify(const volatile void *ptr) noexcept {
     return const_cast<void *>(ptr);
 }
 } // namespace detail
+
+template <std::destructible E> constexpr void destroy_at(E *element) {
+    using EType = typename std::remove_all_extents_t<E>;
+    if constexpr (std::is_array_v<E>) {
+        using ElementType       = typename std::remove_extent_t<E>;
+        constexpr std::size_t N = sizeof(E) / sizeof(ElementType);
+        auto array = static_cast<std::array<ElementType, N> *>(detail::voidify(element));
+        ext::destroy_at(array);
+    } else if constexpr (!std::is_standard_layout_v<EType> || !std::is_trivial_v<EType>) {
+        element->~E();
+    }
+}
 
 template <class E, class... Args>
 constexpr auto construct_at(E *p, Args &&...args) noexcept(noexcept(::new(std::declval<void *>())
