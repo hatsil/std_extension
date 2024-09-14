@@ -5,7 +5,7 @@
 
 #include <algorithm>
 #include <limits>
-#include <tuple>
+#include <utility>
 
 namespace ext {
 template <class F, class... Args>
@@ -38,22 +38,21 @@ executor::emplace(EmplaceAt position, F &&f, Args &&...args) {
     }
 
     using Result = typename std::invoke_result_t<F, Args...>;
-    std::packaged_task<Result()> task([fTup    = std::tuple<F>(std::forward<F>(f)),
-                                       argsTup = std::tuple<Args...>(std::forward<Args>(args)...)] {
-        return std::apply(std::get<F>(fTup), argsTup);
-    });
+    std::packaged_task<Result(Args...)> task(std::forward<F>(f));
 
     auto res = task.get_future();
     if (EmplaceAt::BACK == position) {
-        m_tasks.emplace_back([task = std::move(task)]() mutable {
-            task();
-            return State::CONTINUE;
-        });
+        m_tasks.emplace_back(
+            [task = std::move(task), ... args = std::forward<Args>(args)]() mutable {
+                task(std::forward<Args>(args)...);
+                return State::CONTINUE;
+            });
     } else {
-        m_tasks.emplace_front([task = std::move(task)]() mutable {
-            task();
-            return State::CONTINUE;
-        });
+        m_tasks.emplace_front(
+            [task = std::move(task), ... args = std::forward<Args>(args)]() mutable {
+                task(std::forward<Args>(args)...);
+                return State::CONTINUE;
+            });
     }
 
     --m_activeness;
