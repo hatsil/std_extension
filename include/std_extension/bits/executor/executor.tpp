@@ -22,6 +22,20 @@ executor::emplace_front(F &&f, Args &&...args) {
     return emplace(EmplaceAt::FRONT, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
+namespace detail {
+template <typename T> decltype(auto) bind_forward(std::remove_reference_t<T> &t) {
+    if constexpr (std::is_lvalue_reference_v<T>) {
+        if constexpr (std::is_const_v<std::remove_reference_t<T>>) {
+            return std::cref(t);
+        } else {
+            return std::ref(t);
+        }
+    } else {
+        return std::forward<T>(t);
+    }
+}
+} // namespace detail
+
 template <class F, class... Args>
     requires std::invocable<F, Args...>
 [[nodiscard]] std::future<std::invoke_result_t<F, Args...>>
@@ -38,21 +52,20 @@ executor::emplace(EmplaceAt position, F &&f, Args &&...args) {
     }
 
     using Result = typename std::invoke_result_t<F, Args...>;
-    std::packaged_task<Result(Args...)> task(std::forward<F>(f));
+    std::packaged_task<Result()> task(
+        std::bind(std::forward<F>(f), detail::bind_forward<Args>(args)...));
 
     auto res = task.get_future();
     if (EmplaceAt::BACK == position) {
-        m_tasks.emplace_back(
-            [task = std::move(task), ... args = std::forward<Args>(args)]() mutable {
-                task(std::forward<Args>(args)...);
-                return State::CONTINUE;
-            });
+        m_tasks.emplace_back([task = std::move(task)]() mutable {
+            task();
+            return State::CONTINUE;
+        });
     } else {
-        m_tasks.emplace_front(
-            [task = std::move(task), ... args = std::forward<Args>(args)]() mutable {
-                task(std::forward<Args>(args)...);
-                return State::CONTINUE;
-            });
+        m_tasks.emplace_front([task = std::move(task)]() mutable {
+            task();
+            return State::CONTINUE;
+        });
     }
 
     --m_activeness;
