@@ -22,8 +22,11 @@ public:
     template <class Allocator = ext::allocator<char>>
     explicit exception(std::string_view what_str, const Allocator &alloc);
 
-    exception(const exception &other) noexcept            = default;
-    exception &operator=(const exception &other) noexcept = default;
+    exception(const exception &) noexcept            = default;
+    exception &operator=(const exception &) noexcept = default;
+
+    exception(exception &&) noexcept            = default;
+    exception &operator=(exception &&) noexcept = default;
 
     const char   *what() const noexcept override;
     std::ostream &print_stacktrace(std::ostream &out) const noexcept;
