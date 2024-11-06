@@ -352,8 +352,11 @@ using is_implicit_invocable = typename implicit_invocable_info<T>::is_invocable;
 template <typename T>
 constexpr bool is_implicit_invocable_v = is_implicit_invocable<T>::value;
 
-template <bool, typename, typename... Args>
-struct explicit_invocable_info_helper : invocable_essentials<void, std::tuple<Args...>, cv_ref_qualification::UNDETERMINED, true, false, false> {};
+template <bool, typename, typename...>
+struct explicit_invocable_info_helper;
+
+template <typename F, typename... Args>
+struct explicit_invocable_info_helper<false, F, Args...> : invocable_essentials<void, std::tuple<Args...>, cv_ref_qualification::UNDETERMINED, true, false, false> {};
 
 template <typename F, typename... Args>
 struct explicit_invocable_info_helper<true, F, Args...> : invocable_essentials<std::invoke_result_t<F, Args...>, std::tuple<Args...>, cv_ref_qualification::UNDETERMINED, std::is_nothrow_invocable_v<F, Args...>> {};
