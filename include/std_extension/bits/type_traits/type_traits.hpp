@@ -4,6 +4,7 @@
 #include <tuple>
 #include <cstddef>
 #include <functional>
+#include <utility>
 
 namespace ext {
 // utility
@@ -144,8 +145,6 @@ struct invocable_info_meta {
     using result_t = typename InvEssentials::result_t;
     using dst_args_t = typename InvEssentials::dst_args_t;
     using dst_args_count = typename InvEssentials::dst_args_count;
-    using first_args_t = dispose_latest_arg_t<dst_args_t>;
-    using last_arg_t = latest_arg_t<dst_args_t>;
     using src_args_t = SrcArgs;
     using src_args_count = std::tuple_size<src_args_t>;
     using is_noexcept = typename InvEssentials::is_noexcept;
@@ -383,15 +382,29 @@ template <typename T, typename... Args>
 struct invocable_info_helper<true, T, Args...> : invocable_info_meta<implicit_invocable_info<T>, std::tuple<Args...>, implicit_invocable_type_v<T>, is_reference_wrapper_v<std::remove_cvref_t<T>>> {};
 }
 
-template <typename T, typename... Args>
-struct invocable_info : detail::invocable_info_helper<detail::is_implicit_invocable_v<T>, T, Args...> {};
-
-template <typename T, typename... Args>
-struct is_invocable : std::false_type {};
+template <typename F, typename... Args>
+struct invocable_info : detail::invocable_info_helper<detail::is_implicit_invocable_v<F>, F, Args...> {};
 
 template <typename F, typename... Args>
 struct invocable_result : std::type_identity<typename invocable_info<F, Args...>::result_t> {};
 
 template <typename F, typename... Args>
 using invocable_result_t = typename invocable_result<F, Args...>::type;
+
+
+namespace detail {
+template <typename F, typename... Args>
+consteval bool is_executable(F &&f, Args &&...args) noexcept {
+    if constexpr (!ext::invocable_info<F, Args...>::is_invocable::value) {
+        return false;
+    } else {
+
+    }
+}
+}
+
+
+template <typename F, typename... Args>
+struct is_executable : std::bool_constant<detail::is_executable(std::declval<F>(), std::declval<Args>()...)> {};
+
 }
