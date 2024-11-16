@@ -34,6 +34,23 @@ struct decay : detail::decay_helper<std::decay_t<T>, is_reference_wrapper_v<std:
 template <typename T>
 using decay_t = typename ext::decay<T>::type;
 
+template <std::size_t, std::size_t>
+struct is_eq : std::false_type {};
+
+template <std::size_t A>
+struct is_eq<A, A> : std::true_type {};
+
+template <std::size_t A, std::size_t B>
+constexpr bool is_eq_v = ext::is_eq<A, B>::value;
+
+template <std::size_t A, std::size_t B>
+struct is_le {
+    static constexpr bool value = A <= B;
+};
+
+template <std::size_t A, std::size_t B>
+constexpr bool is_le_v = ext::is_le<A, B>::value;
+
 template<typename T, T...>
 struct is_any_of;
 
@@ -50,16 +67,16 @@ template<typename T, T V, T... Vs>
 constexpr bool is_any_of_v = is_any_of<T, V, Vs...>::value;
 
 template <typename...>
-struct conjunction;
+struct disjunction;
 
 template <typename T>
-struct conjunction<T> : std::type_identity<T> {};
+struct disjunction<T> : std::disjunction<T> {};
 
 template <typename First, typename Second, typename... Rest>
-struct conjunction<First, Second, Rest...> : std::conditional_t<First::value, First, ext::conjunction<Second, Rest...>> {};
+struct disjunction<First, Second, Rest...> : std::conditional_t<First::value, First, ext::disjunction<Second, Rest...>> {};
 
 template <typename... Ts>
-using conjunction_t = typename ext::conjunction<Ts...>::type;
+using disjunction_t = typename ext::disjunction<Ts...>::type;
 
 template <typename BoolConstant, typename T>
 struct predicate : BoolConstant , T {};
@@ -73,6 +90,15 @@ struct latest_arg<std::tuple<First, Rest...>> : std::tuple_element<sizeof...(Res
 
 template<typename T>
 using latest_arg_t = typename latest_arg<T>::type;
+
+template <typename, typename>
+struct add_first;
+
+template <typename First, typename... Rest>
+struct add_first<First, std::tuple<Rest...>> : std::type_identity<std::tuple<Fist, Rest...>> {};
+
+template <typename First, typename Tuple>
+using add_first_t = typename add_first<First, Tuple>::type;
 
 namespace detail {
 template <typename, typename>
@@ -93,6 +119,18 @@ struct dispose_latest_arg<std::tuple<First, Rest...>> : detail::dispose_latest_a
 
 template <typename T>
 using dispose_latest_arg_t = typename dispose_latest_arg<T>::type;
+
+template <typename>
+struct dispose_first_arg;
+
+template <>
+struct dispose_first_arg<std::tuple<>> : std::type_identity<std::tuple<>> {};
+
+template <typename First, typename... Rest>
+struct dispose_first_arg<std::tuple<First, Rest...>> : std::type_identity<std::tuple<Rest...>> {};
+
+template <typename T>
+using dispose_first_arg_t = typename dispose_latest_arg<T>::type;
 
 namespace detail {
 // invocable type traits
@@ -364,7 +402,7 @@ template <typename T, typename... Args>
 struct explicit_invocable_info : explicit_invocable_info_helper<std::is_invocable_v<ext::decay_t<T>, Args...>, ext::decay_t<T>, Args...> {};
 
 template <typename T, typename F = std::remove_pointer_t<ext::decay_t<T>>>
-struct implicit_invocable_type : ext::conjunction_t<ext::predicate<std::is_function<F>, invocable_type_int<invocable_type::FUNCTION_PTR>>,
+struct implicit_invocable_type : ext::disjunction_t<ext::predicate<std::is_function<F>, invocable_type_int<invocable_type::FUNCTION_PTR>>,
                                     ext::predicate<std::is_member_function_pointer<F>, invocable_type_int<invocable_type::MEMBER_FUNCTION_PTR>>,
                                     ext::predicate<std::is_member_object_pointer<F>, invocable_type_int<invocable_type::MEMBER_OBJECT_PTR>>,
                                     invocable_type_int<invocable_type::FUNCTION_OBJECT>> {};
@@ -391,20 +429,49 @@ struct invocable_result : std::type_identity<typename invocable_info<F, Args...>
 template <typename F, typename... Args>
 using invocable_result_t = typename invocable_result<F, Args...>::type;
 
-
 namespace detail {
-template <typename F, typename... Args>
-consteval bool is_executable(F &&f, Args &&...args) noexcept {
-    if constexpr (!ext::invocable_info<F, Args...>::is_invocable::value) {
-        return false;
-    } else {
+template <typename DstTuple, typename SrcTuple>
+struct is_executable_helper;
 
-    }
+template <>
+struct is_executable_helper<std::tuple<>, std::tuple<>> : std::true_type {};
+
+template <typename DstTuple, typename SrcTuple>
+struct is_executable_helper : std::conjunction<detail::is_bindable<std::tuple_element_t<0, DstTuple>, std::tuple_element_t<0, SrcTuple>>, detail::is_executable_helper<ext::dispose_first_arg_t<DstTuple>, ext::dispose_first_arg_t<SrcTuple>>> {};
+
+template <bool, typename, typename>
+struct is_non_variadic_executable : std::false_type {};
+
+template <typename DstTuple, typename SrcTuple>
+struct is_non_variadic_executable<true, DstTuple, SrcTuple> : detail::is_executable_helper<DstTuple, SrcTuple> {};
+
+template <bool /* IsVariadic */, invocable_type, typename /* F */, typename /* Dst */, typename /* Src */>
+struct is_executable : std::false_type {};
+
+template <typename F, typename DstTuple, typename SrcTuple>
+struct is_executable<false, invocable_type::FUNCTION_OBJECT, F, DstTuple, SrcTuple> : is_non_variadic_executable<ext::is_eq_v<std::tuple_size_v<DstTuple>, std::tuple_size_v<SrcTuple>>, ext::add_first_t<F, DstTuple>, ext::add_first_t<F, SrcTuple>> {};
+
+template <typename F, typename DstTuple, typename SrcTuple>
+struct is_executable<false, invocable_type::FUNCTION_PTR, F, DstTuple, SrcTuple> : is_executable<false, invocable_type::FUNCTION_OBJECT, F, DstTuple, SrcTuple> {};
+
+template <typename MemberFunction, typename DstTuple, typename Instance, typename... SrcRest>
+struct is_executable<false, invocable_type::MEMBER_FUNCTION_PTR, MemberFunction, DstTuple, std::tuple<Instance, SrcRest...>> : std::conjunction<is_memberof<ext::decay_t<MemberFunction>, ext::decay_t<Instance>>, is_non_variadic_executable<ext::is_eq_v<std::tuple_size_v<DstTuple>, sizeof...(SrcRest)>, ext::add_first_t<MemberFunction, ext::add_first_t<Instance, DstTuple>>, std::tuple<MemberFunction, Instance, SrcRest...>>> {};
+
+template <typename MemberObject, typename Instance>
+struct is_executable<false, invocable_type::MEMBER_OBJECT_PTR, MemberObject, std::tuple<>, std::tuple<Instance>> : detail::is_executable<false, invocable_type::MEMBER_FUCNTION_PTR, MemberObject, std::tuple<>, std::tuple<Instance>> {};
+
+template <typename F, typename DstTuple, typename SrcTuple>
+struct is_executable<true, invocable_type::FUNCTION_OBJECT, F, DstTuple, SrcTuple> : is_variadic_executable<ext::is_le_v<std::tuple_size_v<DstTuple>, std::tuple_size_v<SrcTuple>>, ext::add_first_t<F, DstTuple>, ext::add_first_t<F, SrcTuple>> {};
+
+template <typename F, typename DstTuple, typename SrcTuple>
+struct is_executable<true, invocable_type::FUNCTION_PTR, F, DstTuple, SrcTuple> : is_executable<true, invocable_type::FUNCTION_OBJECT, F, DstTuple, SrcTuple> {};
+
+template <typename MemberFunction, typename DstTuple, typename Instance, typename... SrcRest>
+struct is_executable<true, invocable_type::MEMBER_FUNCTION_PTR, MemberFunction, DstTuple, std::tuple<Instance, SrcRest...>> : std::conjunction<is_memberof<ext::decay_t<MemberFunction>, ext::decay_t<Instance>>, is_variadic_executable<ext::is_le_v<std::tuple_size_v<DstTuple>, sizeof...(SrcRest)>, ext::add_first_t<MemberFunction, ext::add_first_t<Instance, DstTuple>>, std::tuple<MemberFunction, Instance, SrcRest...>>> {};
+
 }
-}
-
 
 template <typename F, typename... Args>
-struct is_executable : std::bool_constant<detail::is_executable(std::declval<F>(), std::declval<Args>()...)> {};
+struct is_executable;
 
 }
