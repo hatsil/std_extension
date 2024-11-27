@@ -20,16 +20,16 @@ public:
 
     ~executor();
 
-    template <class... Args, single_use_bindable<Args...> F>
-    [[nodiscard]] std::future<invocable_result_t<F, Args...>> emplace_back(F &&f, Args &&...args);
+    template <class... Args, executable<Args...> F>
+    [[nodiscard]] std::future<ext::invocable_result_t<F, Args...>> emplace_back(F &&f, Args &&...args);
 
-    template <class... Args, single_use_bindable<Args...> F>
+    template <class... Args, executable<Args...> F>
     void emplace_back_discard_future(F &&f, Args &&...args);
 
-    template <class... Args, single_use_bindable<Args...> F>
-    [[nodiscard]] std::future<invocable_result_t<F, Args...>> emplace_front(F &&f, Args &&...args);
+    template <class... Args, executable<Args...> F>
+    [[nodiscard]] std::future<ext::invocable_result_t<F, Args...>> emplace_front(F &&f, Args &&...args);
 
-    template <class... Args, single_use_bindable<Args...> F>
+    template <class... Args, executable<Args...> F>
     void emplace_front_discard_future(F &&f, Args &&...args);
 
     void                      shutdown() noexcept;
@@ -47,8 +47,8 @@ private:
         GRACEFUL,
     };
 
-    template <bool DiscardFuture, EmplaceAt position, class... Args, single_use_bindable<Args...> F>
-    [[nodiscard]] std::future<invocable_result_t<F, Args...>> emplace(F &&f, Args &&...args);
+    template <bool DiscardFuture, EmplaceAt position, class... Args, executable<Args...> F>
+    [[nodiscard]] std::future<ext::invocable_result_t<F, Args...>> emplace(F &&f, Args &&...args);
 
     template <ShutdownPolicy policy>
     void do_shutdown() noexcept;

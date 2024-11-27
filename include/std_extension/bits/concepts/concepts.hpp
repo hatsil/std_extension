@@ -4,5 +4,5 @@
 
 namespace ext {
 template <typename F, typename... Args>
-concept single_use_bindable = is_single_use_bindable_v<F, Args...>;
+concept executable = is_executable_v<F, Args...>;
 }
