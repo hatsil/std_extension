@@ -6,97 +6,281 @@
 
 namespace ext {
 namespace detail {
-template <typename Res, typename... Args> struct function_traits_base {
-    using result_type = Res;
-    using args_type   = std::tuple<Args...>;
-    using arity       = std::tuple_size<args_type>;
-};
-
-template <typename Class> struct member_traits {
-    using class_type          = std::decay_t<Class>;
-    using is_const            = std::is_const<Class>;
-    using is_volatile         = std::is_volatile<Class>;
-    using is_rvalue_reference = std::is_rvalue_reference<Class>;
-    using is_lvalue_reference = std::is_lvalue_reference<Class>;
+template <typename IsNothrowInvocable, typename IsVararg, typename IsConst, typename IsVolatile,
+          typename IsRvalueReference, typename IsLvalueReference, typename Res, typename... Args>
+struct function_traits_base {
+    using is_invocable         = std::true_type;
+    using is_nothrow_invocable = IsNothrowInvocable;
+    using is_vararg            = IsVararg;
+    using is_const             = IsConst;
+    using is_volatile          = IsVolatile;
+    using is_rvalue_reference  = IsRvalueReference;
+    using is_lvalue_reference  = IsLvalueReference;
+    using result_type          = Res;
+    using args_type            = std::tuple<Args...>;
+    using arity                = std::tuple_size<args_type>;
 };
 
 template <typename Signature> struct function_traits {
     using is_invocable = std::false_type;
 };
 
-#define IGN
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...)>
+    : function_traits_base<std::false_type, std::false_type, std::false_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
 
-#define FUNCTION_TRAITS_HELPER_HELPER(CV, REF, NOEXCEPT)                                           \
-    template <typename Res, typename... Args>                                                      \
-    struct function_traits<Res(Args...) CV REF NOEXCEPT> : function_traits_base<Res, Args...> {    \
-        using is_invocable = std::true_type;                                                       \
-        using vararg       = std::false_type;                                                      \
-        using is_nothrow_invocable =                                                               \
-            std::is_nothrow_invocable<Res (*)(Args...) CV REF NOEXCEPT, Args...>;                  \
-    };                                                                                             \
-    template <typename Res, typename... Args>                                                      \
-    struct function_traits<Res(Args......) CV REF NOEXCEPT> : function_traits_base<Res, Args...> { \
-        using is_invocable = std::true_type;                                                       \
-        using vararg       = std::true_type;                                                       \
-        using is_nothrow_invocable =                                                               \
-            std::is_nothrow_invocable<Res (*)(Args......) CV REF NOEXCEPT, Args...>;               \
-    };
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const>
+    : function_traits_base<std::false_type, std::false_type, std::true_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
 
-#define FUNCTION_TRAITS_HELPER(REF, NOEXCEPT, NOEXCEPT_IGNORED) \
-    FUNCTION_TRAITS_HELPER_HELPER(IGN, REF, NOEXCEPT)           \
-    FUNCTION_TRAITS_HELPER_HELPER(const, REF, NOEXCEPT)         \
-    FUNCTION_TRAITS_HELPER_HELPER(volatile, REF, NOEXCEPT)      \
-    FUNCTION_TRAITS_HELPER_HELPER(const volatile, REF, NOEXCEPT)
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) volatile>
+    : function_traits_base<std::false_type, std::false_type, std::false_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
 
-#define FUNCTION_TRAITS(REF, RVAL_IGNORED, LVAL_IGNORED) \
-    FUNCTION_TRAITS_HELPER(REF, IGN, std::false_type)    \
-    FUNCTION_TRAITS_HELPER(REF, noexcept, std::true_type)
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const volatile>
+    : function_traits_base<std::false_type, std::false_type, std::true_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
 
-FUNCTION_TRAITS(IGN, std::false_type, std::false_type)
-FUNCTION_TRAITS(&, std::false_type, std::true_type)
-FUNCTION_TRAITS(&&, std::true_type, std::false_type)
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) &>
+    : function_traits_base<std::false_type, std::false_type, std::false_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
 
-#undef FUNCTION_TRAITS_HELPER_HELPER
-#undef FUNCTION_TRAITS_HELPER
-#undef FUNCTION_TRAITS
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const &>
+    : function_traits_base<std::false_type, std::false_type, std::true_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
 
-template <typename Signature> struct member_function_traits {
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) volatile &>
+    : function_traits_base<std::false_type, std::false_type, std::false_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const volatile &>
+    : function_traits_base<std::false_type, std::false_type, std::true_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) &&>
+    : function_traits_base<std::false_type, std::false_type, std::false_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const &&>
+    : function_traits_base<std::false_type, std::false_type, std::true_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) volatile &&>
+    : function_traits_base<std::false_type, std::false_type, std::false_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const volatile &&>
+    : function_traits_base<std::false_type, std::false_type, std::true_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......)>
+    : function_traits_base<std::false_type, std::true_type, std::false_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const>
+    : function_traits_base<std::false_type, std::true_type, std::true_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) volatile>
+    : function_traits_base<std::false_type, std::true_type, std::false_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const volatile>
+    : function_traits_base<std::false_type, std::true_type, std::true_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) &>
+    : function_traits_base<std::false_type, std::true_type, std::false_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const &>
+    : function_traits_base<std::false_type, std::true_type, std::true_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) volatile &>
+    : function_traits_base<std::false_type, std::true_type, std::false_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const volatile &>
+    : function_traits_base<std::false_type, std::true_type, std::true_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) &&>
+    : function_traits_base<std::false_type, std::true_type, std::false_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const &&>
+    : function_traits_base<std::false_type, std::true_type, std::true_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) volatile &&>
+    : function_traits_base<std::false_type, std::true_type, std::false_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const volatile &&>
+    : function_traits_base<std::false_type, std::true_type, std::true_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::false_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::true_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) volatile noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::false_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const volatile noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::true_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) & noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::false_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const & noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::true_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) volatile & noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::false_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const volatile & noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::true_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) && noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::false_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const && noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::true_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) volatile && noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::false_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args...) const volatile && noexcept>
+    : function_traits_base<std::true_type, std::false_type, std::true_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::false_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::true_type, std::false_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) volatile noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::false_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const volatile noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::true_type, std::true_type,
+                           std::false_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) & noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::false_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const & noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::true_type, std::false_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) volatile & noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::false_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const volatile & noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::true_type, std::true_type,
+                           std::false_type, std::true_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) && noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::false_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const && noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::true_type, std::false_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) volatile && noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::false_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename Res, typename... Args>
+struct function_traits<Res(Args......) const volatile && noexcept>
+    : function_traits_base<std::true_type, std::true_type, std::true_type, std::true_type,
+                           std::true_type, std::false_type, Res, Args...> {};
+
+template <typename MemberPtr> struct member_traits {
     using is_invocable = std::false_type;
 };
 
-#define MEMBER_FUNCTION_TRAITS_HELPER_HELPER(CV, REF, NOEXCEPT)                          \
-    template <typename Res, typename Class, typename... Args>                            \
-    struct member_function_traits<Res (Class::*)(Args...) CV REF NOEXCEPT>               \
-        : function_traits<Res(Args...) CV REF NOEXCEPT>, member_traits<CV Class REF> {}; \
-    template <typename Res, typename Class, typename... Args>                            \
-    struct member_function_traits<Res (Class::*)(Args......) CV REF NOEXCEPT>            \
-        : function_traits<Res(Args......) CV REF NOEXCEPT>, member_traits<CV Class REF> {};
-
-#define MEMBER_FUNCTION_TRAITS_HELPER(REF, NOEXCEPT, NOEXCEPT_IGNORED) \
-    MEMBER_FUNCTION_TRAITS_HELPER_HELPER(IGN, REF, NOEXCEPT)           \
-    MEMBER_FUNCTION_TRAITS_HELPER_HELPER(const, REF, NOEXCEPT)         \
-    MEMBER_FUNCTION_TRAITS_HELPER_HELPER(volatile, REF, NOEXCEPT)      \
-    MEMBER_FUNCTION_TRAITS_HELPER_HELPER(const volatile, REF, NOEXCEPT)
-
-#define MEMBER_FUNCTION_TRAITS(REF, RVAL_IGNORED, LVAL_IGNORED) \
-    MEMBER_FUNCTION_TRAITS_HELPER(REF, IGN, std::false_type)    \
-    MEMBER_FUNCTION_TRAITS_HELPER(REF, noexcept, std::true_type)
-
-MEMBER_FUNCTION_TRAITS(IGN, std::false_type, std::false_type)
-MEMBER_FUNCTION_TRAITS(&, std::false_type, std::true_type)
-MEMBER_FUNCTION_TRAITS(&&, std::true_type, std::false_type)
-
-#undef MEMBER_FUNCTION_TRAITS_HELPER_HELPER
-#undef MEMBER_FUNCTION_TRAITS_HELPER
-#undef MEMBER_FUNCTION_TRAITS
-#undef IGN
+template <typename T, typename Class> struct member_traits<T Class::*> : function_traits<T> {
+    using class_type = Class;
+};
 
 template <typename Signature> struct weak_function_object_traits {
     using is_invocable = std::false_type;
 };
 
 template <typename Functor>
-struct weak_function_object_traits : member_function_traits<decltype(&Functor::operator())> {};
+struct weak_function_object_traits : member_traits<decltype(&Functor::operator())> {
+    using functor_type = Functor;
+};
 
 enum class weak_invocable {
     FUNCTION,
@@ -120,7 +304,7 @@ struct weak_invocable_traits_helper<
 template <typename Signature>
 struct weak_invocable_traits_helper<
     Signature, std::integral_constant<weak_invocable, weak_invocable::MEMBER_FUNCTION>>
-    : member_function_traits<Signature> {};
+    : member_traits<Signature> {};
 
 template <typename Functor>
 struct weak_invocable_traits_helper<
