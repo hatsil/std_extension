@@ -24,6 +24,8 @@ template <typename Signature> struct function_traits {
     using is_invocable = std::false_type;
 };
 
+#define IGN
+
 #define FUNCTION_TRAITS_HELPER_HELPER(CV, REF, NOEXCEPT)                                           \
     template <typename Res, typename... Args>                                                      \
     struct function_traits<Res(Args...) CV REF NOEXCEPT> : function_traits_base<Res, Args...> {    \
@@ -41,16 +43,16 @@ template <typename Signature> struct function_traits {
     };
 
 #define FUNCTION_TRAITS_HELPER(REF, NOEXCEPT, NOEXCEPT_IGNORED) \
-    FUNCTION_TRAITS_HELPER_HELPER(  , REF, NOEXCEPT)            \
+    FUNCTION_TRAITS_HELPER_HELPER(IGN, REF, NOEXCEPT)           \
     FUNCTION_TRAITS_HELPER_HELPER(const, REF, NOEXCEPT)         \
     FUNCTION_TRAITS_HELPER_HELPER(volatile, REF, NOEXCEPT)      \
     FUNCTION_TRAITS_HELPER_HELPER(const volatile, REF, NOEXCEPT)
 
 #define FUNCTION_TRAITS(REF, RVAL_IGNORED, LVAL_IGNORED) \
-    FUNCTION_TRAITS_HELPER(REF,  , std::false_type)      \
+    FUNCTION_TRAITS_HELPER(REF, IGN, std::false_type)    \
     FUNCTION_TRAITS_HELPER(REF, noexcept, std::true_type)
 
-FUNCTION_TRAITS(  , std::false_type, std::false_type)
+FUNCTION_TRAITS(IGN, std::false_type, std::false_type)
 FUNCTION_TRAITS(&, std::false_type, std::true_type)
 FUNCTION_TRAITS(&&, std::true_type, std::false_type)
 
@@ -71,22 +73,23 @@ template <typename Signature> struct member_function_traits {
         : function_traits<Res(Args......) CV REF NOEXCEPT>, member_traits<CV Class REF> {};
 
 #define MEMBER_FUNCTION_TRAITS_HELPER(REF, NOEXCEPT, NOEXCEPT_IGNORED) \
-    MEMBER_FUNCTION_TRAITS_HELPER_HELPER(, REF, NOEXCEPT)              \
+    MEMBER_FUNCTION_TRAITS_HELPER_HELPER(IGN, REF, NOEXCEPT)           \
     MEMBER_FUNCTION_TRAITS_HELPER_HELPER(const, REF, NOEXCEPT)         \
     MEMBER_FUNCTION_TRAITS_HELPER_HELPER(volatile, REF, NOEXCEPT)      \
     MEMBER_FUNCTION_TRAITS_HELPER_HELPER(const volatile, REF, NOEXCEPT)
 
 #define MEMBER_FUNCTION_TRAITS(REF, RVAL_IGNORED, LVAL_IGNORED) \
-    MEMBER_FUNCTION_TRAITS_HELPER(REF, , std::false_type)       \
+    MEMBER_FUNCTION_TRAITS_HELPER(REF, IGN, std::false_type)    \
     MEMBER_FUNCTION_TRAITS_HELPER(REF, noexcept, std::true_type)
 
-MEMBER_FUNCTION_TRAITS(, std::false_type, std::false_type)
+MEMBER_FUNCTION_TRAITS(IGN, std::false_type, std::false_type)
 MEMBER_FUNCTION_TRAITS(&, std::false_type, std::true_type)
 MEMBER_FUNCTION_TRAITS(&&, std::true_type, std::false_type)
 
 #undef MEMBER_FUNCTION_TRAITS_HELPER_HELPER
 #undef MEMBER_FUNCTION_TRAITS_HELPER
 #undef MEMBER_FUNCTION_TRAITS
+#undef IGN
 
 template <typename Signature> struct weak_function_object_traits {
     using is_invocable = std::false_type;
