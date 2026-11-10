@@ -9,14 +9,12 @@
 
 namespace ext {
 template <class F, class... Args>
-    requires std::invocable<F, Args...>
 [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> executor::emplace_back(F &&f,
                                                                                    Args &&...args) {
     return emplace(EmplaceAt::BACK, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <class F, class... Args>
-    requires std::invocable<F, Args...>
 [[nodiscard]] std::future<std::invoke_result_t<F, Args...>>
 executor::emplace_front(F &&f, Args &&...args) {
     return emplace(EmplaceAt::FRONT, std::forward<F>(f), std::forward<Args>(args)...);
@@ -37,7 +35,6 @@ template <typename T> decltype(auto) bind_forward(std::remove_reference_t<T> &t)
 } // namespace detail
 
 template <class F, class... Args>
-    requires std::invocable<F, Args...>
 [[nodiscard]] std::future<std::invoke_result_t<F, Args...>>
 executor::emplace(EmplaceAt position, F &&f, Args &&...args) {
     long expected = 0;

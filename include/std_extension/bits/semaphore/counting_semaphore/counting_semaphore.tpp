@@ -1,8 +1,6 @@
 #pragma once
 
-#include "std_extension/deferred_task.hpp"
 #include "std_extension/exception.hpp"
-#include "std_extension/unexpected_deferred_task.hpp"
 #include "synopsis.hpp"
 
 #include <algorithm>
@@ -42,15 +40,6 @@ void counting_semaphore<LeastMaxValue>::release(std::size_t update) {
 }
 
 template <std::size_t LeastMaxValue> void counting_semaphore<LeastMaxValue>::acquire() {
-    std::size_t   remainingNotifications = 0;
-    deferred_task defer([this, &remainingNotifications] {
-        if (0 != remainingNotifications) {
-            m_cv.notify_one();
-        }
-    });
-
-    unexpected_deferred_task unexpectedDefer([this] { m_cv.notify_one(); });
-
     std::unique_lock lock(m_mutex);
     if (0 != m_value) {
         --m_value;
@@ -58,14 +47,15 @@ template <std::size_t LeastMaxValue> void counting_semaphore<LeastMaxValue>::acq
     }
 
     if (max() == m_waiting) {
+        m_cv.notify_one();
         throw exception("m_waiting overflow");
     }
 
-    unexpected_deferred_task unexpectedDefer2([this] { --m_waiting; });
-
     ++m_waiting;
     m_cv.wait(lock, [this] { return 0 != m_notified; });
-    remainingNotifications = --m_notified;
+    if (0 != --m_notified) {
+        m_cv.notify_one();
+    }
 }
 
 template <std::size_t LeastMaxValue>
@@ -82,37 +72,27 @@ template <std::size_t LeastMaxValue>
 template <class Clock, class Duration>
 bool counting_semaphore<LeastMaxValue>::try_acquire_until(
     const std::chrono::time_point<Clock, Duration> &abs_time) {
-    std::size_t remainingNotifications = 0;
-
-    deferred_task defer([this, &remainingNotifications] {
-        if (0 != remainingNotifications) {
-            m_cv.notify_one();
-        }
-    });
-
-    unexpected_deferred_task unexpectedDefer([this] { m_cv.notify_one(); });
-
-    bool             res = true;
     std::unique_lock lock(m_mutex);
     if (0 != m_value) {
         --m_value;
-        return res;
+        return true;
     }
 
     if (max() == m_waiting) {
+        m_cv.notify_one();
         throw exception("m_waiting overflow");
     }
 
-    unexpected_deferred_task unexpectedDefer2([this] { --m_waiting; });
-
     ++m_waiting;
-    res = m_cv.wait_until(lock, abs_time, [this] { return 0 != m_notified; });
-    if (res) {
-        remainingNotifications = --m_notified;
+    if (m_cv.wait_until(lock, abs_time, [this] { return 0 != m_notified; })) {
+        if (0 != --m_notified) {
+            m_cv.notify_one();
+        }
+        return true;
     } else {
         --m_waiting;
     }
-    return res;
+    return false;
 }
 
 template <std::size_t LeastMaxValue>

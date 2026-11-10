@@ -5,7 +5,7 @@
 namespace ext {
 template <class Allocator>
 exception::exception(std::string_view what_str, const Allocator &alloc)
-    : m_spore(::ext::make_shared<Spore<Allocator>>(alloc, what_str, alloc)) {}
+    : m_spore(std::allocate_shared<Spore<Allocator>>(alloc, what_str, alloc)) {}
 
 #ifdef USE_BOOST_STACKTRACE
 template <class Allocator>

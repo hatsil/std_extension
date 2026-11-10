@@ -30,10 +30,7 @@ executor::executor(std::size_t nthreads)
             });
         } catch (...) {
             m_activeness = -2;
-            for (thread &worker : m_workers) {
-                worker.interrupt();
-            }
-            for (thread &worker : m_workers) {
+            for (std::thread &worker : m_workers) {
                 worker.join();
             }
             throw;
@@ -77,7 +74,7 @@ void executor::shutdown(ShutdownPolicy policy) {
             std::this_thread::yield(); // try again
         }
 
-    for (thread &worker : m_workers) {
+    for (std::thread &worker : m_workers) {
         worker.join();
     }
     m_activeness = -2;

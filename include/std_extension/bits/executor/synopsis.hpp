@@ -1,7 +1,6 @@
 #pragma once
 
 #include "std_extension/blocking_deque.hpp"
-#include "std_extension/thread.hpp"
 
 #include <atomic>
 #include <concepts>
@@ -22,11 +21,9 @@ public:
     ~executor();
 
     template <class F, class... Args>
-        requires std::invocable<F, Args...>
     [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> emplace_back(F &&f, Args &&...args);
 
     template <class F, class... Args>
-        requires std::invocable<F, Args...>
     [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> emplace_front(F &&f,
                                                                               Args &&...args);
 
@@ -46,7 +43,6 @@ private:
     };
 
     template <class F, class... Args>
-        requires std::invocable<F, Args...>
     [[nodiscard]] std::future<std::invoke_result_t<F, Args...>> emplace(EmplaceAt position, F &&f,
                                                                         Args &&...args);
 
@@ -57,7 +53,7 @@ private:
         STOP,
     };
     std::atomic_long                                 m_activeness;
-    std::vector<thread>                              m_workers;
+    std::vector<std::thread>                         m_workers;
     blocking_deque<std::move_only_function<State()>> m_tasks;
 };
 } // namespace ext

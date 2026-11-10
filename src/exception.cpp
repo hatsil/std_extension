@@ -2,7 +2,7 @@
 
 namespace ext {
 exception::exception(std::string_view what_str)
-    : exception(what_str, allocator<char>()) {}
+    : exception(what_str, std::allocator<char>()) {}
 
 const char *exception::what() const noexcept { return m_spore->what(); }
 

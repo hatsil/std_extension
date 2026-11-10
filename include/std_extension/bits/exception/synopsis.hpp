@@ -1,7 +1,5 @@
 #pragma once
 
-#include "std_extension/memory.hpp"
-
 #include <exception>
 #include <memory>
 #include <ostream>
@@ -19,7 +17,7 @@ class exception : public std::exception {
 public:
     exception(std::string_view what_str = "");
 
-    template <class Allocator = ext::allocator<char>>
+    template <class Allocator = std::allocator<char>>
     explicit exception(std::string_view what_str, const Allocator &alloc);
 
     exception(const exception &other) noexcept            = default;
@@ -36,7 +34,7 @@ private:
         virtual std::ostream &print_stacktrace(std::ostream &out) const noexcept = 0;
     };
 
-    template <class Allocator = ext::allocator<char>> class Spore final : public SporeBase {
+    template <class Allocator = std::allocator<char>> class Spore final : public SporeBase {
     public:
         explicit Spore(std::string_view what_str, const Allocator &alloc);
 

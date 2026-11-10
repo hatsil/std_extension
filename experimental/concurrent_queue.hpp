@@ -1,14 +1,13 @@
 #pragma once
 
-#include "memory.hpp"
-
+#include <memory>
 #include <utility>
 #include <limits>
 #include <cstdint>
 #include <atomic>
 
 namespace ext {
-template <class E, class Allocator = ext::allocator<E>>
+template <class E, class Allocator = std::allocator<E>>
 class concurrent_queue {
 public:
 using allocator_type = Allocator;
@@ -29,11 +28,11 @@ private:
 
     template <class... Args>
     std::shared_ptr<E> newElement(Args &&...args) {
-        return ::ext::make_shared<E>(m_alloc, std::forward<Args>(args)...);
+        return std::allocate_shared<E>(m_alloc, std::forward<Args>(args)...);
     }
 
     std::shared_ptr<Node> newNode(std::shared_ptr<E> element) {
-        return ::ext::make_shared<Node>(m_alloc, element);
+        return std::allocate_shared<Node>(m_alloc, element);
     }
 
     void push(std::shared_ptr<Node> node) noexcept {

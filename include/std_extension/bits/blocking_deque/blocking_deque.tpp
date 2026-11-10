@@ -1,6 +1,5 @@
 #pragma once
 
-#include "std_extension/memory.hpp"
 #include "synopsis.hpp"
 
 #include <thread>
@@ -52,7 +51,7 @@ template <class U, class... Args>
     requires std::constructible_from<U, Args...>
 std::shared_ptr<E>
 blocking_deque<E, Allocator, CountingSemaphore>::newElement(Args &&...args) const {
-    return ::ext::make_shared<U>(m_alloc, std::forward<Args>(args)...);
+    return std::allocate_shared<U>(m_alloc, std::forward<Args>(args)...);
 }
 
 template <class E, class Allocator, class CountingSemaphore>

@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace ext {
-template <class E, class Allocator = ext::allocator<E>>
+template <class E, class Allocator = std::allocator<E>>
 class concurrent_deque final {
   public:
     // types

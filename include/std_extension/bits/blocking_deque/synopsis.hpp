@@ -1,6 +1,5 @@
 #pragma once
 
-#include "std_extension/memory.hpp"
 #include "std_extension/semaphore.hpp"
 
 #include <concepts>
@@ -10,7 +9,7 @@
 #include <mutex>
 
 namespace ext {
-template <class E, class Allocator = ext::allocator<E>,
+template <class E, class Allocator = std::allocator<E>,
           class CountingSemaphore = ext::counting_semaphore<>>
 class blocking_deque {
 public:
@@ -215,8 +214,4 @@ private:
     mutable std::mutex                                m_mutex;
     std::list<std::shared_ptr<E>, AllocatorSharedPtr> m_deque;
 };
-
-template <class E, class Allocator = ext::allocator<E>>
-using fair_blocking_deque = blocking_deque<E, Allocator, ext::fair_counting_semaphore<>>;
-
 } // namespace ext
